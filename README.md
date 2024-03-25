@@ -11,4 +11,4 @@ This fork carries on that tradition, but further reduces the scope so that it pr
 
 ## Documentation
 
-See [api/docs.md](API docs)
+See [doc/api.md](API docs)

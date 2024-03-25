@@ -317,19 +317,19 @@ More readable example:
 
 ```clojure
 [ :db :es {:redis :redis-conn} :http-client]
-``
+```
 
-would resolve to:
+would expand to:
 
 ```clojure
 { :db :db
 :es :es
 :redis :redis-conn
 :http-client :http-client }
-``
+```
 
-Useful when a component's dependency list is mostly
-the same but has one or two exceptions which require aliasing
+Useful when given component's dependency list is mostly
+the same but has one or two exceptions which require aliasing.
 
 
 <details>
@@ -349,19 +349,19 @@ the same but has one or two exceptions which require aliasing
 
   ```clojure
   [ :db :es {:redis :redis-conn} :http-client]
-  ``
+  ```
 
-  would resolve to:
+  would expand to:
 
   ```clojure
   { :db :db
     :es :es
     :redis :redis-conn
     :http-client :http-client }
-  ``
+  ```
 
-  Useful when a component's dependency list is mostly
-  the same but has one or two exceptions which require aliasing"
+  Useful when given component's dependency list is mostly
+  the same but has one or two exceptions which require aliasing."
   [dependencies]
   (->> dependencies
        (map (fn [x]
@@ -783,4 +783,4 @@ Clean email string and return allowed email using validation/pattern
 
 
 
-Generated 25/03/2024 10:00
+Generated 25/03/2024 10:03

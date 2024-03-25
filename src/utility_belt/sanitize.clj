@@ -1,4 +1,4 @@
-(ns utility-belt.sanitization
+(ns utility-belt.sanitize
   (:require
     [clojure.string]
     [utility-belt.validation]))

@@ -5,8 +5,7 @@
                                    :username :env/clojars_username
                                    :password :env/clojars_password}}
 
-  :dependencies [[org.clojure/clojure "1.11.2"]
-                 [nrepl "1.1.1"]]
+  :dependencies [[org.clojure/clojure "1.11.2"]]
 
   :global-vars {*warn-on-reflection* true}
 

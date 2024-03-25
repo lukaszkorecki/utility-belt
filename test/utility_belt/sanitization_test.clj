@@ -1,7 +1,7 @@
 (ns utility-belt.sanitization-test
   (:require
     [clojure.test :refer [is deftest testing]]
-    [utility-belt.sanitization :as sanitization]))
+    [utility-belt.sanitize :as sanitization]))
 
 (deftest remove-spaces-test
   (testing "it removes all spaces"

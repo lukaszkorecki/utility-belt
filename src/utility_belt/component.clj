@@ -1,26 +1,54 @@
-(ns utility-belt.component
-  (:require
-    [com.stuartsierra.component]))
-
+(ns utility-belt.component)
 
 (defn deps
   "Converts a mixed list of dependencies into a
   dependency map.
+
+  ```clojure
   [:a :b {:c :f} :d] -> { :a :a :b :b :c :f :d :d }
+  ```
+
+  More readable example:
+
+  ```clojure
+  [ :db :es {:redis :redis-conn} :http-client]
+  ``
+
+  would resolve to:
+
+  ```clojure
+  { :db :db
+    :es :es
+    :redis :redis-conn
+    :http-client :http-client }
+  ``
+
   Useful when a component's dependency list is mostly
   the same but has one or two exceptions which require aliasing"
   [dependencies]
-  (into {} (map (fn [x]
-                  (if (map? x)
-                    (vec (flatten (seq x)))
-                    [x x]))
-                dependencies)))
+  (->> dependencies
+       (map (fn [x]
+              (if (map? x)
+                (vec (flatten (seq x)))
+                [x x])))
+       (into {})))
 
+(def using+
+  "Like component/using but accepts a mixed list of component dependencies.
+  See `+utility-belt.component/deps+`:
 
-(defn using+
-  "Like component/using but accepts a mixed list of component dependencies. See +utility-belt.component/deps+.
-  (using+ (some-component/create) [ :a :b {:c :d}])"
-  [component dependencies-list]
-  (com.stuartsierra.component/using
-    component
-    (deps dependencies-list)))
+  ```clojure
+  (using+ (some-component/create) [ :a :b {:c :d}])
+  ```
+
+  > [!WARNING]
+  > requires Component library to be pressent in the classpath"
+
+  (if-let [using* (try
+                    (requiring-resolve 'com.stuartsierra.component/using)
+                    (catch Exception _e
+                      false))]
+    (fn using+' [component dependencies-list]
+      (using* component (deps dependencies-list)))
+    (fn using-missing' [_ _]
+      (throw (ex-info "'Component' was not found in classpath" {})))))

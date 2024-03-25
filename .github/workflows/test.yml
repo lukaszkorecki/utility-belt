@@ -31,3 +31,7 @@ jobs:
     - name: Run tests
       id: tests
       run: lein test 2>&1
+
+    - name: Verify test file is gone, because shutdown hook deleted it
+      run: |
+        [[ -e /tmp/ut-test-file ]] && exit 1 || exit 0

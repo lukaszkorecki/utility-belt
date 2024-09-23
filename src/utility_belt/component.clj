@@ -1,4 +1,5 @@
-(ns utility-belt.component)
+(ns utility-belt.component
+  (:require [com.stuartsierra.component]))
 
 (defn deps
   "Converts a mixed list of dependencies into a
@@ -33,7 +34,7 @@
                 [x x])))
        (into {})))
 
-(def using+
+(defn using+
   "Like component/using but accepts a mixed list of component dependencies.
   See `+utility-belt.component/deps+`:
 
@@ -43,30 +44,25 @@
 
   > [!WARNING]
   > requires Component library to be pressent in the classpath"
-
-  (if-let [using* (try
-                    (requiring-resolve 'com.stuartsierra.component/using)
-                    (catch Exception _e
-                      false))]
-    (fn using+' [component dependencies-list]
-      (using* component (deps dependencies-list)))
-    (fn using-missing' [_ _]
-      (throw (ex-info "'Component' was not found in classpath" {})))))
+  [component dependencies-list]
+  (com.stuartsierra.component/using component (deps dependencies-list)))
 
 (defn map->system
   "Convinence function to convert a map into a SystemMap record"
   [sys-map]
-  (if-let [f' (requiring-resolve 'com.stuartsierra.component/map->SystemMap)]
-    (f' sys-map)
-    (throw (ex-info "'Component' was not found in classpath" {}))))
+  (com.stuartsierra.component/map->SystemMap sys-map))
 
 (defn map->component
   "Given an inital (a map) and single arg-start/stop functions accepting the
   map representing the component, returns a component.
   Simplifies extending-via-metadata pattern to ensure right naming of things.
 
-  NOTE: this is only suitable for simpler components, with minimal state that don't need
-  to implement any other protocols or interfaces"
+  > [!NOTE]
+  > this is only suitable for simpler components, with minimal state that don't need
+  >  to implement any other protocols or interfaces
+
+  > [!WARNING]
+  > requires Component library to be pressent in the classpath"
   [{:keys [init-val
            start
            stop]

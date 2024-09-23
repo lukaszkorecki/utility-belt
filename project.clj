@@ -5,12 +5,12 @@
                                    :username :env/clojars_username
                                    :password :env/clojars_password}}
 
-  :dependencies [[org.clojure/clojure "1.11.2"]]
+  :dependencies [[org.clojure/clojure "1.12.0"]]
 
   :global-vars {*warn-on-reflection* true}
 
   :profiles {:dev
-             {:dependencies [[cheshire "5.12.0"]
+             {:dependencies [[cheshire "5.13.0"]
                              [com.stuartsierra/component "1.1.0"]
                              [org.clojure/tools.logging "1.3.0"]
-                             [ch.qos.logback/logback-classic "1.5.3"]]}})
+                             [ch.qos.logback/logback-classic "1.5.8"]]}})

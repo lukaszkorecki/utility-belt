@@ -52,3 +52,27 @@
       (using* component (deps dependencies-list)))
     (fn using-missing' [_ _]
       (throw (ex-info "'Component' was not found in classpath" {})))))
+
+(defn map->system
+  "Convinence function to convert a map into a SystemMap record"
+  [sys-map]
+  (if-let [f' (requiring-resolve 'com.stuartsierra.component/map->SystemMap)]
+    (f' sys-map)
+    (throw (ex-info "'Component' was not found in classpath" {}))))
+
+(defn map->component
+  "Given an inital (a map) and single arg-start/stop functions accepting the
+  map representing the component, returns a component.
+  Simplifies extending-via-metadata pattern to ensure right naming of things.
+
+  NOTE: this is only suitable for simpler components, with minimal state that don't need
+  to implement any other protocols or interfaces"
+  [{:keys [init-val
+           start
+           stop]
+    :or {init-val {}
+         start identity
+         stop identity}}]
+  (with-meta init-val
+    {'com.stuartsierra.component/start start
+     'com.stuartsierra.component/stop stop}))

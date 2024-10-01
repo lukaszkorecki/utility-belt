@@ -3,7 +3,9 @@
   (:require
    [clojure.tools.logging :as log]))
 
-(def ^{:private true :doc "Default hooks list" } hooks (atom {::shutdown-agents shutdown-agents}))
+(def ^{:private true :doc "Default hooks list" }
+  hooks
+  (atom {::shutdown-agents shutdown-agents}))
 
 (defn add-shutdown-hook
   "Register a function to run when the application *gracefully* shuts down.

@@ -8,7 +8,7 @@
     :or {host "0.0.0.0"}
     :as config}]
   {:pre [(pos? port)]}
-  (component/map->component {:init-val config
+  (component/map->component {:init config
                              :start (fn [this]
                                       (if (:server this)
                                         this

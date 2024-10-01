@@ -1,7 +1,7 @@
 (ns utility-belt.base64-test
   (:require
-    [clojure.test :refer [deftest is testing]]
-    [utility-belt.base64 :as base64]))
+   [clojure.test :refer [deftest is testing]]
+   [utility-belt.base64 :as base64]))
 
 (def default-charset "UTF-8")
 (def ^String test-str "a test string encoded as base64")

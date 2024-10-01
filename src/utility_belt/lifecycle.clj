@@ -3,7 +3,7 @@
   (:require
    [clojure.tools.logging :as log]))
 
-(def ^{:private true :doc "Default hooks list" }
+(def ^{:private true :doc "Default hooks list"}
   hooks
   (atom {::shutdown-agents shutdown-agents}))
 

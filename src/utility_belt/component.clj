@@ -71,37 +71,3 @@
   (with-meta init
     {'com.stuartsierra.component/start start
      'com.stuartsierra.component/stop stop}))
-
-(defn init-app-system
-  "Simplifies wiring up the system as the app entry point, with a graceful shutdown.
-  This is helpful to reduce boilerplate in the main namespace.
-
-  Args:
-
-  - `store` - an atom to store the system in once it's started.
-              You can later refer to it by derefing it in your REPL session
-  - `system-fn` - a function that returns the system map, **NOT** an instance of `SystemMap`
-
-
-  Example:
-  ```clojure
-  (ns some.api.core
-    (:require [some.api.system :as system]
-              [utility-belt.component :as component]))
-
-  (def app (atom nil))
-
-  (defn -main [& _args]
-    (component/init-app-system {:store app
-                                :system-fn  system/production)))
-  ```
-  "
-  [{:keys [store system-fn]}]
-  {:pre [(instance? clojure.lang.Atom store)
-         (fn? system-fn)]}
-  (reset! store (component/start-system (map->system (system-fn))))
-  (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
-                                                  (swap! store
-                                                         #(when % (component/stop-system %)))))
-
-  store)

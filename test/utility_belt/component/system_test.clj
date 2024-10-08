@@ -31,17 +31,17 @@
         (is (= :value (-> (get-system) :static))))
 
       (testing "start/stop/get functions are setup in attached namespace"
-        (is (= true (-> @(find-var 'utility-belt.component.system-test.dev-sys/system) deref :thing :started)))
+        (is (= true (-> @@(find-var 'utility-belt.component.system-test.dev-sys/system) :thing :started)))
         (is (fn? @(find-var 'utility-belt.component.system-test.dev-sys/start)))
         (is (fn? @(find-var 'utility-belt.component.system-test.dev-sys/stop)))
-        (is (instance? (class (atom {}))  @(find-var 'utility-belt.component.system-test.dev-sys/system)))))
+        (is (instance? (class (atom {})) @(find-var 'utility-belt.component.system-test.dev-sys/system)))))
 
     (testing "stopping"
       (stop-system)
 
       (is (nil? (-> (get-system) :static)))
 
-      (is (nil? (-> @(find-var 'utility-belt.component.system-test.dev-sys/system) :thing :started)))
+      (is (nil? (-> @@(find-var 'utility-belt.component.system-test.dev-sys/system) :thing :started)))
       (testing "stop handler was called on the component"
         (is (zero? @cnt))))
 
@@ -49,3 +49,21 @@
       (start-system {:another-static :another-thing})
       (is (= :another-thing (-> (get-system) :another-static)))
       (stop-system))))
+
+(deftest init-for-test-test
+  (testing "provides utility for unit tests"
+    (let [{:keys [use-test-system get-system]} (util.system/init-for-test {:system-map-fn 'utility-belt.component.system-test/make-system
+                                                                           :ns-to-attach-to 'utility-belt.component.system-test})]
+
+      (testing "nothing is running"
+        (is (nil? @@(find-var 'utility-belt.component.system-test.dev-sys/system))))
+
+      (testing "within the hook, system is started and can be used"
+        (use-test-system (fn []
+                           (is (= :value (-> (get-system) :static)))
+                           (is (= true (-> (get-system) :thing :started)))
+                           (is (= 1 @cnt)))))
+
+      (testing "nothing is running, again"
+        (is (zero? @cnt))
+        (is (nil? @@(find-var 'utility-belt.component.system-test.dev-sys/system)))))))

@@ -76,10 +76,12 @@
   - component-map-fn: a symbol pointing to a function that returns a **map of components** NOT an instance of `component/SystemMap`
   - reloadable?: boolean, if true, will enable reloading of the system map function and the system itself, default is false
                  When true, it requires `clojure.tools.namespace` to be present in the classpath, otherwise it will throw an error.
+  - debug?: boolean, if true will print start/stop/no-op messages
   "
   [{:keys [ns-to-attach-to
            component-map-fn
-           reloadable?]}]
+           reloadable?
+           debug?]}]
   {:pre [(qualified-symbol? component-map-fn)
          (or (nil? ns-to-attach-to)
              (symbol? ns-to-attach-to))]}
@@ -123,10 +125,12 @@
                                                                      (fn [sys]
                                                                        (if sys
                                                                          (do
-                                                                           (println "System already running in " sys-ns-sym)
+                                                                           (when debug?
+                                                                             (println "System already running in " sys-ns-sym))
                                                                            sys)
                                                                          (do
-                                                                           (println "Starting system in " sys-ns-sym)
+                                                                           (when debug?
+                                                                             (println "Starting system in " sys-ns-sym))
                                                                            (when (and tools-ns-available? reloadable?)
                                                                              (refresh))
                                                                            (-> ((var-get (resolve component-map-fn)))
@@ -140,17 +144,20 @@
                                                                     (fn [sys]
                                                                       (if sys
                                                                         (do
-                                                                          (println "Stopping system in " sys-ns-sym)
+                                                                          (when debug?
+                                                                            (println "Stopping system in " sys-ns-sym))
                                                                           (component/stop sys)
                                                                           nil)
-                                                                        (println "System not running in " sys-ns-sym))))))]
+                                                                        (when debug?
+                                                                          (println "System not running in " sys-ns-sym)))))))]
 
                        (start')))
 
      :stop-system (fn stop-dev-system' []
                     (if-let [stop' (ns-resolve sys-ns-sym 'stop)]
                       (stop')
-                      (println "ERROR: system not started, run start it first")))
+                      (when debug?
+                        (println "ERROR: system not started, run start it first"))))
 
      :get-system (fn get-dev-system' []
                    @(var-get (resolve (symbol sys-ns "system"))))}))

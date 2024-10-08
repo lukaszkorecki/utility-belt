@@ -1,4 +1,4 @@
-(defproject org.clojars.lukaszkorecki/utility-belt "2.0.0-SNAPSHOT-2"
+(defproject org.clojars.lukaszkorecki/utility-belt "2.0.0-SNAPSHOT-3"
   :description "Some of the tools you'll ever need to fight crime and write Clojure stuffs"
   :license "MIT"
   :url "https://github.com/lukaszkorecki/utility-belt"

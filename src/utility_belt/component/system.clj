@@ -14,7 +14,7 @@
 
   - `store` - an atom to store the system in once it's started.
               You can later refer to it by derefing it in your REPL session
-  - `system-fn` - a function that returns the system map, **NOT** an instance of `SystemMap`
+  - `component-map-fn` - a function that returns the system map, **NOT** an instance of `SystemMap`
 
 
   Example:
@@ -27,13 +27,13 @@
 
   (defn -main [& _args]
     (component/init-app-system {:store app
-                                :system-fn  system/production)))
+                                :component-map-fn  system/production)))
   ```
   "
-  [{:keys [store system-fn]}]
+  [{:keys [store component-map-fn]}]
   {:pre [(type/atom? store)
-         (fn? system-fn)]}
-  (reset! store (component/start-system (util.component/map->system (system-fn))))
+         (fn? component-map-fn)]}
+  (reset! store (component/start-system (util.component/map->system (component-map-fn))))
   (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
                                                   (swap! store
                                                          #(when % (component/stop-system %)))))

@@ -35,6 +35,31 @@ This fork carries on that tradition, but further reduces the scope so that it pr
 
 - `utility-belt.component.system` - utilities for managing systems of components for dev, test and production (see below)
 
+
+#### production setup
+
+
+`utility-belt.component.system/init-for-prod` reduces boilerplate for creating a system of components for production environments. It registers a shutdown hook to stop the system when the JVM is shutting down.
+
+```clojure
+(ns app.core
+  (:require [utility-belt.component.system :as system]
+            [app.system]))
+
+
+;; so that you can access it later via nREPL, optional
+(def sys (atom nil))
+
+
+(def -main [& args]
+  (system/setup-for-prod {:store sys
+                          :component-map-fn app.system/production}))
+
+
+;; now when the app starts, started system will be in `app.core/sys` atom
+;; stopping the JVM process will automatically stop the system
+```
+
 #### dev/test component systems
 
 `utility-belt.component.system/setup-for-dev` reduces boilerplate for creating a system of components for dev and test environments.

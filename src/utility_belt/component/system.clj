@@ -6,7 +6,7 @@
    [utility-belt.lifecycle :as lifecycle]
    [utility-belt.type :as type]))
 
-(defn init-for-prod
+(defn setup-for-production
   "Simplifies wiring up the system as the app entry point, with a graceful shutdown.
   This is helpful to reduce boilerplate in the main namespace.
 
@@ -58,7 +58,7 @@
                       (def refresh identity)
                       (def disable-reload! identity)))
 
-(defn init-for-dev
+(defn setup-for-dev
   "Sets up a dev-system namespace which will provide start, stop and getter function as well
   as hold on to the started system.
   This makes it easier to work with component as part of a dev setup (with easy reloading)
@@ -73,14 +73,14 @@
 
   Args:
   - ns-to-attach-to: namespace to attach the dev-system to, by default it attaches to the current namespace (`*ns*`)
-  - system-map-fn: a symbol pointing to a function that returns a **map of components** NOT an instance of `component/SystemMap`
+  - component-map-fn: a symbol pointing to a function that returns a **map of components** NOT an instance of `component/SystemMap`
   - reloadable?: boolean, if true, will enable reloading of the system map function and the system itself, default is false
                  When true, it requires `clojure.tools.namespace` to be present in the classpath, otherwise it will throw an error.
   "
   [{:keys [ns-to-attach-to
-           system-map-fn
+           component-map-fn
            reloadable?]}]
-  {:pre [(qualified-symbol? system-map-fn)
+  {:pre [(qualified-symbol? component-map-fn)
          (or (nil? ns-to-attach-to)
              (symbol? ns-to-attach-to))]}
   (when reloadable?
@@ -92,7 +92,7 @@
         sys-ns (str (or ns-to-attach-to *ns*) ".dev-sys")
         sys-ns-sym (symbol sys-ns)
         ;; get the ns symbol, for reloading
-        system-fn-ns-sym (-> system-map-fn
+        system-fn-ns-sym (-> component-map-fn
                              resolve
                              meta
                              :ns
@@ -100,7 +100,7 @@
                              symbol)]
     (when-not system-fn-ns-sym
       (throw (ex-info "not a valid symbol for system map fn"
-                      {:system-map-fn system-map-fn})))
+                      {:component-map-fn component-map-fn})))
 
     {:start-system (fn start-dev-sys' [& additional-component-map]
                      ;; first check if we have previous state hanging
@@ -129,7 +129,7 @@
                                                                            (println "Starting system in " sys-ns-sym)
                                                                            (when (and tools-ns-available? reloadable?)
                                                                              (refresh))
-                                                                           (-> ((var-get (resolve system-map-fn)))
+                                                                           (-> ((var-get (resolve component-map-fn)))
                                                                                (merge (first additional-component-map))
                                                                                component/map->SystemMap
                                                                                component/start)))))))
@@ -155,13 +155,13 @@
      :get-system (fn get-dev-system' []
                    @(var-get (resolve (symbol sys-ns "system"))))}))
 
-(defn init-for-test
-  "Like `init-for-dev` but also provides a `use-test-system` function that will start the system as well and doesn't enable reloading"
-  [{:keys [ns-to-attach-to system-map-fn]}]
+(defn setup-for-test
+  "Like `setup-for-dev` but also provides a `use-test-system` function that will start the system as well and doesn't enable reloading"
+  [{:keys [ns-to-attach-to component-map-fn]}]
 
-  (let [{:keys [start-system stop-system] :as sys-fns} (init-for-dev {:system-map-fn system-map-fn
-                                                                      :ns-to-attach-to ns-to-attach-to
-                                                                      :reloadable? false})]
+  (let [{:keys [start-system stop-system] :as sys-fns} (setup-for-dev {:component-map-fn component-map-fn
+                                                                       :ns-to-attach-to ns-to-attach-to
+                                                                       :reloadable? false})]
 
     (assoc sys-fns
            :use-test-system (fn use-test-system' [test-fn & additional-component-map]
@@ -175,8 +175,8 @@
   #_{:clj-kondo/ignore [:namespace-name-mismatch]}
   (in-ns 'app.repl)
 
-  (let [{:keys [start-system stop-system get-system]} (init-for-dev {:system-map-fn 'app.system/development
-                                                                     :reloadable? true})]
+  (let [{:keys [start-system stop-system get-system]} (setup-for-dev {:component-map-fn 'app.system/development
+                                                                      :reloadable? true})]
 
     (def system get-system)
     (def start start-system)
@@ -184,7 +184,7 @@
     (def stop stop-system))
 
   (in-ns 'app.tests)
-  (let [{:keys [get-system use-test-system]} (init-for-test {:system-map-fn 'app.system/test})]
+  (let [{:keys [get-system use-test-system]} (setup-for-test {:component-map-fn 'app.system/test})]
 
     (def system get-system)
 

@@ -16,10 +16,10 @@
                                                   (swap! cnt dec)
                                                   (assoc this :stopped true :started false))})})
 
-(deftest init-for-dev-test
-  (let [{:keys [start-system stop-system get-system]} (util.system/init-for-dev {:system-map-fn 'utility-belt.component.system-test/make-system
-                                                                                 :ns-to-attach-to 'utility-belt.component.system-test
-                                                                                 :reloadable? false})]
+(deftest setup-for-dev-test
+  (let [{:keys [start-system stop-system get-system]} (util.system/setup-for-dev {:component-map-fn 'utility-belt.component.system-test/make-system
+                                                                                  :ns-to-attach-to 'utility-belt.component.system-test
+                                                                                  :reloadable? false})]
 
     (testing "system can be started via provided fns"
       (testing "system starts only once"
@@ -50,10 +50,10 @@
       (is (= :another-thing (-> (get-system) :another-static)))
       (stop-system))))
 
-(deftest init-for-test-test
+(deftest setup-for-test-test
   (testing "provides utility for unit tests"
-    (let [{:keys [use-test-system get-system]} (util.system/init-for-test {:system-map-fn 'utility-belt.component.system-test/make-system
-                                                                           :ns-to-attach-to 'utility-belt.component.system-test})]
+    (let [{:keys [use-test-system get-system]} (util.system/setup-for-test {:component-map-fn 'utility-belt.component.system-test/make-system
+                                                                            :ns-to-attach-to 'utility-belt.component.system-test})]
 
       (testing "nothing is running"
         (is (nil? @@(find-var 'utility-belt.component.system-test.dev-sys/system))))

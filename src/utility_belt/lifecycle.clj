@@ -1,7 +1,6 @@
 (ns utility-belt.lifecycle
   "Tools for managing application lifecycle")
 
-
 ;; FIXME: this should use a logging backend (c.tools.logging), instead of println!
 (set! *warn-on-reflection* true)
 

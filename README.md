@@ -37,9 +37,12 @@ This fork carries on that tradition, but further reduces the scope so that it pr
 
 #### dev/test component systems
 
-`utility-belt.component.system/init-for-dev` reduces boilerplate for creating a system of components for dev and test environments.
+`utility-belt.component.system/setup-for-dev` reduces boilerplate for creating a system of components for dev and test environments.
 Additionally it allows for easy system reloading in the REPL, with additional state clean up so that all code used by components is guaranteed to be reloaded.
+- `utility-belt.component.system/setup-for-test` - similar to the above, also includes a `use-test-system` hook for `clojure.test/use-fixtures`
 
+
+Dev workflow setup:
 
 ```clojure
 (ns app.repl ;; here or in user.clj
@@ -49,7 +52,7 @@ Additionally it allows for easy system reloading in the REPL, with additional st
 
 
 
-(let [sys-utils (system/init-for-dev {:system-map-fn 'app.system/development
+(let [sys-utils (system/setup-for-dev {:component-map-fn 'app.system/development
                                       :reloadable? true})
       {:keys [start-system stop-system get-system] } sys-utils]
 
@@ -78,16 +81,10 @@ In unit testing, the setup is similar:
             [utility-belt.component.system :as sys]))
 
 
-(let [sys-utils (system/init-for-dev {:system-map-fn 'app.system/test})
-      {:keys [start-system stop-system get-system] } sys-utils]
+(let [sys-utils (system/setup-for-test {:component-map-fn 'app.system/test})
+      {:keys [use-test-system get-system] } sys-utils]
   (def system get-system)
-  (defn with-test-system (fn [test]
-                           (try
-                             (start-system {:also  :test-only/components
-                                            :are :supported})
-                             (test)
-                             (finally
-                               (stop-system))))))
+  (def with-test-system use-test-system))
 
 
 
@@ -103,20 +100,13 @@ In unit testing, the setup is similar:
   (is (= :bananas (some/handler {:component (test-utils/system)
                                  :body {:fruit :bananas}}))))
 
+;; you can also attach extra component map:
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+(use-fixtures :each (fn [test]
+                      (test-utils/with-test-system
+                        test
+                        {:extra-component :hello
+                         :something-else (component.util/map->component {:name :something-else})})))
 
 ```

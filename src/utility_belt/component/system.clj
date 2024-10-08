@@ -1,5 +1,6 @@
 (ns utility-belt.component.system
   (:require
+   [clojure.string :as str]
    [com.stuartsierra.component :as component]
    [utility-belt.compile :as compile]
    [utility-belt.component :as util.component]
@@ -14,6 +15,7 @@
 
   - `store` - an atom to store the system in once it's started.
               You can later refer to it by derefing it in your REPL session
+  - `service` - name of the service, if not provided, will infer it from current namespace
   - `component-map-fn` - a function that returns the system map, **NOT** an instance of `SystemMap`
 
 
@@ -30,13 +32,17 @@
                                 :component-map-fn  system/production)))
   ```
   "
-  [{:keys [store component-map-fn]}]
+  [{:keys [store service component-map-fn]}]
   {:pre [(type/atom? store)
          (fn? component-map-fn)]}
-  (reset! store (component/start-system (util.component/map->system (component-map-fn))))
-  (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
-                                                  (swap! store
-                                                         #(when % (component/stop-system %)))))
+  (let [svc-name (str (or service
+                          (first (str/split (str *ns*) #"\."))))]
+    (println "starting" svc-name)
+    (reset! store (component/start-system (util.component/map->system (component-map-fn))))
+    (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
+                                                    (println "stopping" svc-name)
+                                                    (swap! store
+                                                           #(when % (component/stop-system %))))))
 
   store)
 
@@ -45,7 +51,7 @@
 (compile/compile-if (do
                       (require '[clojure.tools.namespace.repl])
                       true)
-
+                    ;; we can refresh
                     (do
                       (def tools-ns-available? true)
                       (def refresh
@@ -53,10 +59,21 @@
                       (def disable-reload!
                         (requiring-resolve 'clojure.tools.namespace.repl/disable-reload!)))
 
+                    ;; we can't refresh, provide no-ops
                     (do
                       (def tools-ns-available? false)
                       (def refresh identity)
                       (def disable-reload! identity)))
+
+(defn- fn-sym->ns-sym
+  "Given a fully qualified symbol for a fn, returns its namespace symbol"
+  [fn-sym]
+  (-> fn-sym
+      resolve
+      meta
+      :ns
+      clojure.lang.Namespace/.getName
+      symbol))
 
 (defn setup-for-dev
   "Sets up a dev-system namespace which will provide start, stop and getter function as well
@@ -94,13 +111,8 @@
         sys-ns (str (or ns-to-attach-to *ns*) ".dev-sys")
         sys-ns-sym (symbol sys-ns)
         ;; get the ns symbol, for reloading
-        system-fn-ns-sym (-> component-map-fn
-                             resolve
-                             meta
-                             :ns
-                             clojure.lang.Namespace/.getName
-                             symbol)]
-    (when-not system-fn-ns-sym
+        component-map-fn-ns-sym (fn-sym->ns-sym component-map-fn)]
+    (when-not component-map-fn-ns-sym
       (throw (ex-info "not a valid symbol for system map fn"
                       {:component-map-fn component-map-fn})))
 
@@ -118,25 +130,27 @@
                            ;; start function reloads the system 'factory' namespace and starts the system
                            ;; started system is stored in the atom
                            start' (intern sys-ns-sym 'start (fn sys-start' []
-                                                              ;; reload the namespace which provides component map
-                                                              (require system-fn-ns-sym :reload)
+                                                              ;; reload the namespace which provides component map, this will ensure
+                                                              ;; that the reloaded code is using latest version
+                                                              (require component-map-fn-ns-sym :reload)
+                                                              (when reloadable?
+                                                                (refresh))
                                                               ;; now start the system and store it for later
                                                               (swap! (var-get sys-atom')
                                                                      (fn [sys]
                                                                        (if sys
                                                                          (do
                                                                            (when debug?
-                                                                             (println "System already running in " sys-ns-sym))
+                                                                             (println "System already running in" sys-ns-sym))
                                                                            sys)
                                                                          (do
                                                                            (when debug?
-                                                                             (println "Starting system in " sys-ns-sym))
-                                                                           (when (and tools-ns-available? reloadable?)
-                                                                             (refresh))
+                                                                             (println "Starting system in" sys-ns-sym))
                                                                            (-> ((var-get (resolve component-map-fn)))
                                                                                (merge (first additional-component-map))
                                                                                component/map->SystemMap
                                                                                component/start)))))))
+
                            ;; define simple stop-fn, it will not be used here
                            ;; but called by a separate stop fn wrapper
                            _stop' (intern sys-ns-sym 'stop (fn sys-stop' []
@@ -145,11 +159,11 @@
                                                                       (if sys
                                                                         (do
                                                                           (when debug?
-                                                                            (println "Stopping system in " sys-ns-sym))
+                                                                            (println "Stopping system in" sys-ns-sym))
                                                                           (component/stop sys)
                                                                           nil)
                                                                         (when debug?
-                                                                          (println "System not running in " sys-ns-sym)))))))]
+                                                                          (println "System not running in" sys-ns-sym)))))))]
 
                        (start')))
 

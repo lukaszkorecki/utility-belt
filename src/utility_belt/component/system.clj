@@ -7,6 +7,8 @@
    [utility-belt.lifecycle :as lifecycle]
    [utility-belt.type :as type]))
 
+;; TODO: use tools.logging instead of println
+
 (defn setup-for-production
   "Simplifies wiring up the system as the app entry point, with a graceful shutdown.
   This is helpful to reduce boilerplate in the main namespace.
@@ -65,7 +67,7 @@
                       (def refresh identity)
                       (def disable-reload! identity)))
 
-(defn- fn-sym->ns-sym
+(defn fn-sym->ns-sym
   "Given a fully qualified symbol for a fn, returns its namespace symbol"
   [fn-sym]
   (-> fn-sym
@@ -88,12 +90,15 @@
   The reason why this exists is to make sure that code reloaded via `tools.namespace.repl` is
   truly reloadable, by ensuring all satate is nuked before reloading.
 
+  This is also more robust solution if you want to keep your dev system running while running tests for example.
+  There are some caveats but it should work for the most part, as opposed to `component.repl` approach.
+
   Args:
-  - ns-to-attach-to: namespace to attach the dev-system to, by default it attaches to the current namespace (`*ns*`)
-  - component-map-fn: a symbol pointing to a function that returns a **map of components** NOT an instance of `component/SystemMap`
-  - reloadable?: boolean, if true, will enable reloading of the system map function and the system itself, default is false
-                 When true, it requires `clojure.tools.namespace` to be present in the classpath, otherwise it will throw an error.
-  - debug?: boolean, if true will print start/stop/no-op messages
+  - `ns-to-attach-to`: namespace to attach the dev-system to, by default it attaches to the current namespace (`*ns*`)
+  - `component-map-fn`: a symbol pointing to a function that returns a **map of components** NOT an instance of `component/SystemMap`
+  - `reloadable?`: boolean, if true, will enable reloading of the system map function and the system itself, default is false
+                  When true, it requires `clojure.tools.namespace` to be present in the classpath, otherwise it will throw an error.
+  - `debug?`: boolean, if true will print start/stop/no-op messages
   "
   [{:keys [ns-to-attach-to
            component-map-fn

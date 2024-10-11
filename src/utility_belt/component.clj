@@ -1,4 +1,7 @@
-(ns utility-belt.component)
+(ns utility-belt.component
+  (:require
+   [com.stuartsierra.component :as component]
+   [utility-belt.lifecycle :as lifecycle]))
 
 (defn deps
   "Converts a mixed list of dependencies into a
@@ -33,7 +36,7 @@
                 [x x])))
        (into {})))
 
-(def using+
+(defn using+
   "Like component/using but accepts a mixed list of component dependencies.
   See `+utility-belt.component/deps+`:
 
@@ -43,12 +46,28 @@
 
   > [!WARNING]
   > requires Component library to be pressent in the classpath"
+  [component dependencies-list]
+  (component/using component (deps dependencies-list)))
 
-  (if-let [using* (try
-                    (requiring-resolve 'com.stuartsierra.component/using)
-                    (catch Exception _e
-                      false))]
-    (fn using+' [component dependencies-list]
-      (using* component (deps dependencies-list)))
-    (fn using-missing' [_ _]
-      (throw (ex-info "'Component' was not found in classpath" {})))))
+(defn map->system
+  "Convinence function to convert a map into a SystemMap record"
+  [sys-map]
+  (component/map->SystemMap sys-map))
+
+(defn map->component
+  "Given an inital (a map) and single arg-start/stop functions accepting the
+  map representing the component, returns a component.
+  Simplifies extending-via-metadata pattern to ensure right naming of things.
+
+  > [!NOTE]
+  > this is only suitable for simpler components, with minimal state that don't need
+  >  to implement any other protocols or interfaces"
+  [{:keys [init
+           start
+           stop]
+    :or {init {}
+         start identity
+         stop identity}}]
+  (with-meta init
+    {'com.stuartsierra.component/start start
+     'com.stuartsierra.component/stop stop}))

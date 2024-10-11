@@ -1,13 +1,13 @@
 (ns utility-belt.base64-test
   (:require
-    [clojure.test :refer [deftest is testing]]
-    [utility-belt.base64 :as base64]))
+   [clojure.test :refer [deftest is testing]]
+   [utility-belt.base64 :as base64]))
 
 (def default-charset "UTF-8")
 (def ^String test-str "a test string encoded as base64")
-(def ^bytes test-str-bytes (.getBytes test-str default-charset))
+(def ^bytes test-str-bytes (String/.getBytes test-str ^String default-charset))
 (def ^String test-str-64 "YSB0ZXN0IHN0cmluZyBlbmNvZGVkIGFzIGJhc2U2NA==")
-(def ^bytes test-str-64-bytes (.getBytes test-str-64 default-charset))
+(def ^bytes test-str-64-bytes (String/.getBytes test-str-64 ^String default-charset))
 
 (defn same-bytes?
   "= doesn't work with bytes but (= seq seq) compares 1-1"

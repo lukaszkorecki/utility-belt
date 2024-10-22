@@ -121,56 +121,59 @@
       (throw (ex-info "not a valid symbol for system map fn"
                       {:component-map-fn component-map-fn})))
 
-    {:start-system (fn start-dev-sys' [& additional-component-map]
+    {:start-system (fn start-dev-sys'
+                     ([]
+                      (start-dev-sys' {}))
+                     ([additional-component-map]
                      ;; first check if we have previous state hanging
                      ;; if so, nuke it
-                     (when (resolve (symbol sys-ns "system"))
-                       (remove-ns sys-ns-sym))
+                      (when (resolve (symbol sys-ns "system"))
+                        (remove-ns sys-ns-sym))
 
                      ;; now (re)create the  namespace and its vars
-                     (create-ns sys-ns-sym)
-                     (let [;; we will hold the running system in an atom
-                           sys-atom' (intern sys-ns-sym 'system (atom nil))
+                      (create-ns sys-ns-sym)
+                      (let [;; we will hold the running system in an atom
+                            sys-atom' (intern sys-ns-sym 'system (atom nil))
 
                            ;; start function reloads the system 'factory' namespace and starts the system
                            ;; started system is stored in the atom
-                           start' (intern sys-ns-sym 'start (fn sys-start' []
+                            start' (intern sys-ns-sym 'start (fn sys-start' []
                                                               ;; reload the namespace which provides component map, this will ensure
                                                               ;; that the reloaded code is using latest version
-                                                              (require component-map-fn-ns-sym :reload)
-                                                              (when reloadable?
-                                                                (refresh))
+                                                               (require component-map-fn-ns-sym :reload)
+                                                               (when reloadable?
+                                                                 (refresh))
                                                               ;; now start the system and store it for later
+                                                               (swap! (var-get sys-atom')
+                                                                      (fn [sys]
+                                                                        (if sys
+                                                                          (do
+                                                                            (when debug?
+                                                                              (println "System already running in" sys-ns-sym))
+                                                                            sys)
+                                                                          (do
+                                                                            (when debug?
+                                                                              (println "Starting system in" sys-ns-sym))
+                                                                            (-> ((var-get (resolve component-map-fn)))
+                                                                                (merge additional-component-map)
+                                                                                component/map->SystemMap
+                                                                                component/start)))))))
+
+                           ;; define simple stop-fn, it will not be used here
+                           ;; but called by a separate stop fn wrapper
+                            _stop' (intern sys-ns-sym 'stop (fn sys-stop' []
                                                               (swap! (var-get sys-atom')
                                                                      (fn [sys]
                                                                        (if sys
                                                                          (do
                                                                            (when debug?
-                                                                             (println "System already running in" sys-ns-sym))
-                                                                           sys)
-                                                                         (do
-                                                                           (when debug?
-                                                                             (println "Starting system in" sys-ns-sym))
-                                                                           (-> ((var-get (resolve component-map-fn)))
-                                                                               (merge (first additional-component-map))
-                                                                               component/map->SystemMap
-                                                                               component/start)))))))
+                                                                             (println "Stopping system in" sys-ns-sym))
+                                                                           (component/stop sys)
+                                                                           nil)
+                                                                         (when debug?
+                                                                           (println "System not running in" sys-ns-sym)))))))]
 
-                           ;; define simple stop-fn, it will not be used here
-                           ;; but called by a separate stop fn wrapper
-                           _stop' (intern sys-ns-sym 'stop (fn sys-stop' []
-                                                             (swap! (var-get sys-atom')
-                                                                    (fn [sys]
-                                                                      (if sys
-                                                                        (do
-                                                                          (when debug?
-                                                                            (println "Stopping system in" sys-ns-sym))
-                                                                          (component/stop sys)
-                                                                          nil)
-                                                                        (when debug?
-                                                                          (println "System not running in" sys-ns-sym)))))))]
-
-                       (start')))
+                        (start'))))
 
      :stop-system (fn stop-dev-system' []
                     (if-let [stop' (ns-resolve sys-ns-sym 'stop)]
@@ -190,12 +193,15 @@
                                                                        :reloadable? false})]
 
     (assoc sys-fns
-           :use-test-system (fn use-test-system' [test-fn & additional-component-map]
-                              (try
-                                (start-system additional-component-map)
-                                (test-fn)
-                                (finally
-                                  (stop-system)))))))
+           :use-test-system (fn use-test-system'
+                              ([test-fn]
+                               (use-test-system' test-fn {}))
+                              ([test-fn additional-component-map]
+                               (try
+                                 (start-system additional-component-map)
+                                 (test-fn)
+                                 (finally
+                                   (stop-system))))))))
 
 (comment
   #_{:clj-kondo/ignore [:namespace-name-mismatch]}

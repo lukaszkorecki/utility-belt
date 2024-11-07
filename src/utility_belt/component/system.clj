@@ -121,7 +121,10 @@
       (throw (ex-info "not a valid symbol for system map fn"
                       {:component-map-fn component-map-fn})))
 
-    {:start-system (fn start-dev-sys' [& additional-component-map]
+    {:start-system (fn start-dev-sys'
+                     ([]
+                      (start-dev-sys' {}))
+                     ([additional-component-map]
                      ;; first check if we have previous state hanging
                      ;; if so, nuke it
                      (when (resolve (symbol sys-ns "system"))
@@ -152,7 +155,7 @@
                                                                            (when debug?
                                                                              (println "Starting system in" sys-ns-sym))
                                                                            (-> ((var-get (resolve component-map-fn)))
-                                                                               (merge (first additional-component-map))
+                                                                               (merge additional-component-map)
                                                                                component/map->SystemMap
                                                                                component/start)))))))
 
@@ -170,7 +173,7 @@
                                                                         (when debug?
                                                                           (println "System not running in" sys-ns-sym)))))))]
 
-                       (start')))
+                       (start'))))
 
      :stop-system (fn stop-dev-system' []
                     (if-let [stop' (ns-resolve sys-ns-sym 'stop)]
@@ -190,12 +193,15 @@
                                                                        :reloadable? false})]
 
     (assoc sys-fns
-           :use-test-system (fn use-test-system' [test-fn & additional-component-map]
-                              (try
-                                (start-system additional-component-map)
-                                (test-fn)
-                                (finally
-                                  (stop-system)))))))
+           :use-test-system (fn use-test-system'
+                              ([test-fn]
+                               (use-test-system' test-fn {}))
+                              ([test-fn additional-component-map]
+                               (try
+                                 (start-system additional-component-map)
+                                 (test-fn)
+                                 (finally
+                                   (stop-system))))))))
 
 (comment
   #_{:clj-kondo/ignore [:namespace-name-mismatch]}

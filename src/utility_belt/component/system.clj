@@ -7,6 +7,16 @@
    [utility-belt.lifecycle :as lifecycle]
    [utility-belt.type :as type]))
 
+(defn fn-sym->ns-sym
+  "Given a fully qualified symbol for a fn, returns its namespace symbol"
+  [fn-sym]
+  (-> fn-sym
+      resolve
+      meta
+      :ns
+      clojure.lang.Namespace/.getName
+      symbol))
+
 ;; TODO: use tools.logging instead of println
 
 (defn setup-for-production
@@ -36,9 +46,14 @@
   "
   [{:keys [store service component-map-fn]}]
   {:pre [(type/atom? store)
-         (fn? component-map-fn)]}
+         (or (fn? component-map-fn)
+             (qualified-symbol? component-map-fn))]}
   (let [svc-name (str (or service
-                          (first (str/split (str *ns*) #"\."))))]
+                          (first (str/split (str *ns*) #"\."))))
+        ;; support both the fn or a fully qual symbol
+        component-map-fn (if (fn? component-map-fn)
+                           component-map-fn
+                           (fn-sym->ns-sym component-map-fn))]
     (println "starting" svc-name)
     (reset! store (component/start-system (util.component/map->system (component-map-fn))))
     (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
@@ -66,16 +81,6 @@
                       (def tools-ns-available? false)
                       (def refresh identity)
                       (def disable-reload! identity)))
-
-(defn fn-sym->ns-sym
-  "Given a fully qualified symbol for a fn, returns its namespace symbol"
-  [fn-sym]
-  (-> fn-sym
-      resolve
-      meta
-      :ns
-      clojure.lang.Namespace/.getName
-      symbol))
 
 (defn setup-for-dev
   "Sets up a dev-system namespace which will provide start, stop and getter function as well
@@ -120,60 +125,60 @@
     (when-not component-map-fn-ns-sym
       (throw (ex-info "not a valid symbol for system map fn"
                       {:component-map-fn component-map-fn})))
-
+    ;; now return all the functions that can be 'mounted' into system namespace
     {:start-system (fn start-dev-sys'
                      ([]
                       (start-dev-sys' {}))
                      ([additional-component-map]
                      ;; first check if we have previous state hanging
                      ;; if so, nuke it
-                     (when (resolve (symbol sys-ns "system"))
-                       (remove-ns sys-ns-sym))
+                      (when (resolve (symbol sys-ns "system"))
+                        (remove-ns sys-ns-sym))
 
                      ;; now (re)create the  namespace and its vars
-                     (create-ns sys-ns-sym)
-                     (let [;; we will hold the running system in an atom
-                           sys-atom' (intern sys-ns-sym 'system (atom nil))
+                      (create-ns sys-ns-sym)
+                      (let [;; we will hold the running system in an atom
+                            sys-atom' (intern sys-ns-sym 'system (atom nil))
 
                            ;; start function reloads the system 'factory' namespace and starts the system
                            ;; started system is stored in the atom
-                           start' (intern sys-ns-sym 'start (fn sys-start' []
+                            start' (intern sys-ns-sym 'start (fn sys-start' []
                                                               ;; reload the namespace which provides component map, this will ensure
                                                               ;; that the reloaded code is using latest version
-                                                              (require component-map-fn-ns-sym :reload)
-                                                              (when reloadable?
-                                                                (refresh))
+                                                               (require component-map-fn-ns-sym :reload)
+                                                               (when reloadable?
+                                                                 (refresh))
                                                               ;; now start the system and store it for later
+                                                               (swap! (var-get sys-atom')
+                                                                      (fn [sys]
+                                                                        (if sys
+                                                                          (do
+                                                                            (when debug?
+                                                                              (println "System already running in" sys-ns-sym))
+                                                                            sys)
+                                                                          (do
+                                                                            (when debug?
+                                                                              (println "Starting system in" sys-ns-sym))
+                                                                            (-> ((var-get (resolve component-map-fn)))
+                                                                                (merge additional-component-map)
+                                                                                component/map->SystemMap
+                                                                                component/start)))))))
+
+                           ;; define simple stop-fn, it will not be used here
+                           ;; but called by a separate stop fn wrapper
+                            _stop' (intern sys-ns-sym 'stop (fn sys-stop' []
                                                               (swap! (var-get sys-atom')
                                                                      (fn [sys]
                                                                        (if sys
                                                                          (do
                                                                            (when debug?
-                                                                             (println "System already running in" sys-ns-sym))
-                                                                           sys)
-                                                                         (do
-                                                                           (when debug?
-                                                                             (println "Starting system in" sys-ns-sym))
-                                                                           (-> ((var-get (resolve component-map-fn)))
-                                                                               (merge additional-component-map)
-                                                                               component/map->SystemMap
-                                                                               component/start)))))))
+                                                                             (println "Stopping system in" sys-ns-sym))
+                                                                           (component/stop sys)
+                                                                           nil)
+                                                                         (when debug?
+                                                                           (println "System not running in" sys-ns-sym)))))))]
 
-                           ;; define simple stop-fn, it will not be used here
-                           ;; but called by a separate stop fn wrapper
-                           _stop' (intern sys-ns-sym 'stop (fn sys-stop' []
-                                                             (swap! (var-get sys-atom')
-                                                                    (fn [sys]
-                                                                      (if sys
-                                                                        (do
-                                                                          (when debug?
-                                                                            (println "Stopping system in" sys-ns-sym))
-                                                                          (component/stop sys)
-                                                                          nil)
-                                                                        (when debug?
-                                                                          (println "System not running in" sys-ns-sym)))))))]
-
-                       (start'))))
+                        (start'))))
 
      :stop-system (fn stop-dev-system' []
                     (if-let [stop' (ns-resolve sys-ns-sym 'stop)]

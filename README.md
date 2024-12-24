@@ -24,22 +24,26 @@ This fork carries on that tradition, but further reduces the scope so that it pr
 ### Application utilities
 
 
-- `utility-belt.lifecycle` - easy management of shutdown hooks
+- `utility-belt.lifecycle` - easy management of JVM process shutdown hooks
 
 
 ### Component utilities
 
 
 - `utility-belt.component` - utilities for making it easier to create components, and systems
-- `utility-belt.component.nrepl` - pre-built component for the nREPL server
+  - `utility-belt.component.nrepl` - pre-built component for the nREPL server
 
-- `utility-belt.component.system` - utilities for managing systems of components for dev, test and production (see below)
-
-
-#### production setup
+- `utility-belt.component.system` - utilities for managing systems of components for dev, test and production (see below), boilerplate reduction
 
 
-`utility-belt.component.system/init-for-prod` reduces boilerplate for creating a system of components for production environments. It registers a shutdown hook to stop the system when the JVM is shutting down.
+#### `ut.c.system`
+
+##### production
+
+
+`utility-belt.component.system/setup-for-production` reduces boilerplate for creating a system of components for production environments. It registers a shutdown hook to stop the system when the JVM is shutting down.
+
+Note: `:component-map-fn` **must** return a map of Components, not an instance of `SysteMap`!
 
 ```clojure
 (ns app.core
@@ -52,20 +56,25 @@ This fork carries on that tradition, but further reduces the scope so that it pr
 
 
 (def -main [& args]
-  (system/setup-for-prod {:store sys
-                          :component-map-fn app.system/production}))
+  (system/setup-for-production {:store sys
+                                ;; NOTE: it has to return a map, not a SystemMap!
+                                ;; it can also be a fully qualified symbol
+                                :component-map-fn app.system/production}))
 
 
 ;; now when the app starts, started system will be in `app.core/sys` atom
 ;; stopping the JVM process will automatically stop the system
+
 ```
 
-#### dev/test component systems
+##### dev/test
 
 `utility-belt.component.system/setup-for-dev` reduces boilerplate for creating a system of components for dev and test environments.
 Additionally it allows for easy system reloading in the REPL, with additional state clean up so that all code used by components is guaranteed to be reloaded.
 - `utility-belt.component.system/setup-for-test` - similar to the above, also includes a `use-test-system` hook for `clojure.test/use-fixtures`
 
+
+Just like in `setup-for-production`, `:component-map-fn` has to be a qualified symbol, and has to return a map of components.
 
 Dev workflow setup:
 
@@ -75,10 +84,10 @@ Dev workflow setup:
             [app.system]))
 
 
-
-
-(let [sys-utils (system/setup-for-dev {:component-map-fn 'app.system/development
-                                      :reloadable? true})
+(let [sys-utils (system/setup-for-dev {;; NOTE: has to be a fully qualified symbol, the fn HAS TO return a map
+                                       ;;       of components, not a SystemMap
+                                       :component-map-fn 'app.system/development
+                                       :reloadable? true})
       {:keys [start-system stop-system get-system] } sys-utils]
 
   (def start start-system)
@@ -98,7 +107,7 @@ Dev workflow setup:
 ```
 
 
-In unit testing, the setup is similar:
+For testing env (unit tests, end-to-end system tests etc), the setup is similar:
 
 ```clojure
 (ns app.test-utils
@@ -106,8 +115,10 @@ In unit testing, the setup is similar:
             [utility-belt.component.system :as sys]))
 
 
-(let [sys-utils (system/setup-for-test {:component-map-fn 'app.system/test})
-      {:keys [use-test-system get-system] } sys-utils]
+(let [sys-utils (system/setup-for-test {;; NOTE: has to be a fully-qualified symbol. fn has to return
+                                        ;;       a map, not a SystemMap!
+                                        :component-map-fn 'app.system/test})
+      {:keys [use-test-system get-system]} sys-utils]
   (def system get-system)
   (def with-test-system use-test-system))
 
@@ -131,6 +142,8 @@ In unit testing, the setup is similar:
 (use-fixtures :each (fn [test]
                       (test-utils/with-test-system
                         test
+                        ;; You can inject additional components or replace existing ones by passing
+                        ;; an optional component map
                         {:extra-component :hello
                          :something-else (component.util/map->component {:name :something-else})})))
 

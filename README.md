@@ -9,6 +9,15 @@ Utility belt started at [EnjoyHQ](https://github.com/nomnom-insights/nomnom.util
 
 This fork carries on that tradition, but further reduces the scope so that it provides only zero-dependency code useful for building applications.
 
+## Installation
+
+`utility-belt` is released to Clojars.
+
+
+- [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.lukaszkorecki/utility-belt.svg)](https://clojars.org/org.clojars.lukaszkorecki/utility-belt)
+- [![Clojars Project](https://img.shields.io/clojars/v/org.clojars.lukaszkorecki/utility-belt.svg?include_prereleases)](https://clojars.org/org.clojars.lukaszkorecki/utility-belt)
+
+
 ## Documentation
 
 

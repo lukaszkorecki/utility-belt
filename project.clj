@@ -7,7 +7,9 @@
                                    :password :env/clojars_password}}
 
   :dependencies [[org.clojure/clojure "1.12.0"]
-                 [com.stuartsierra/component "1.1.0"]]
+                 [com.stuartsierra/component "1.1.0"]
+                 [cheshire "5.13.0"]
+                 [org.clojure/data.csv "1.1.0"]]
 
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev

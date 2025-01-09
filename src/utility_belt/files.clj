@@ -1,4 +1,4 @@
-(ns utility-belt.resources
+(ns utility-belt.files
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [cheshire.core :as json]
@@ -10,16 +10,16 @@
   [resource-name-or-path]
   (let [resource (or (io/resource resource-name-or-path)
                      resource-name-or-path)]
-    (with-open [reader (io/reader resource)]
+    (with-open [reader (java.io.PushbackReader. (io/reader resource))]
       (edn/read reader))))
 
 (defn load-csv
-  "Given a resource name or file path, reads the CSV file and returns a lazy sequence of rows."
+  "Given a resource name or file path, reads the CSV file and returns a sequence of rows."
   [resource-name-or-path]
   (let [resource (or (io/resource resource-name-or-path)
                      resource-name-or-path)]
     (with-open [reader (io/reader resource)]
-      (csv/read-csv reader))))
+      (doall (csv/read-csv reader)))))
 
 (defn load-json
   "Given a resource name or file path, reads the JSON file and returns a Clojure data structure.

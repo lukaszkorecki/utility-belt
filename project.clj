@@ -13,5 +13,4 @@
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev
              {:dependencies [[org.clojure/tools.logging "1.3.0"]
-                             [ch.qos.logback/logback-classic "1.5.8"]]
-              :resource-paths ["dev-resources"]}})
+                             [ch.qos.logback/logback-classic "1.5.8"]]}})

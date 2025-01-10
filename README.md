@@ -28,7 +28,7 @@ This fork carries on that tradition, but further reduces the scope so that it pr
 - `utility-belt.base64` - wraps JDK base64 encoding and decoding with string and byte array methods
 - `utility-belt.type` - type checking utilities such as missing `atom?` function
 - `utility-belt.compile` - macros for conditional compilation
-- `utility-belt.files` - readers for common file types
+- `utility-belt.resources` - readers for `.txt`, `.json`, and `.edn` resources
 
 ### Application utilities
 

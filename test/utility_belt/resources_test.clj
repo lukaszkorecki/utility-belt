@@ -1,6 +1,6 @@
-(ns utility-belt.files-test
+(ns utility-belt.resources-test
   (:require [clojure.test :refer [deftest is testing]]
-            [utility-belt.files :as files]))
+            [utility-belt.resources :as files]))
 
 (deftest load-edn-test
   (testing "loads and parses EDN file correctly"
@@ -31,17 +31,9 @@
               :favorite_color "blue"}
              data)))))
 
-(deftest load-csv-test
-  (testing "loads and parses CSV file correctly"
-    (let [data (files/load-csv "test/utility_belt/fixtures/some.csv")]
-      (is (= [["id" "name" "age" "is_active" "favorite_color"]
-              ["550e8400-e29b-41d4-a716-446655440000" "Alice Smith" "28" "true" "blue"]
-              ["f47ac10b-58cc-4372-a567-0e02b2c3d479" "Bob Johnson" "35" "false" "green"]]
-             data)))))
-
-(deftest load-txt-test
+(deftest load-plain-text-test
   (testing "loads text file correctly"
-    (let [data (files/load-txt "test/utility_belt/fixtures/some.txt")]
+    (let [data (files/load-plain-text "test/utility_belt/fixtures/some.txt")]
       (is (= "Alice Smith is a 28 year old whose favorite color is blue and her account is active.\n"
              data)))))
 

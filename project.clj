@@ -8,10 +8,10 @@
 
   :dependencies [[org.clojure/clojure "1.12.0"]
                  [com.stuartsierra/component "1.1.0"]
-                 [cheshire "5.13.0"]
-                 [org.clojure/data.csv "1.1.0"]]
+                 [cheshire "5.13.0"]]
 
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev
              {:dependencies [[org.clojure/tools.logging "1.3.0"]
-                             [ch.qos.logback/logback-classic "1.5.8"]]}})
+                             [ch.qos.logback/logback-classic "1.5.8"]]
+              :resource-paths ["dev-resources"]}})

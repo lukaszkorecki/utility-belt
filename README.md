@@ -26,23 +26,63 @@ This fork carries on that tradition, but further reduces the scope so that it pr
 
 
 - `utility-belt.base64` - wraps JDK base64 encoding and decoding with string and byte array methods
-- `utility-belt.type` - type checking utilities such as missing `atom?` function
+  - `decode` - accepts string or byte array, returns byte array
+  - `decode->str` - accepts string or byte array, returns string
+  - `encode` - accepts string or byte array, returns byte array
+  - `encode->str` - accepts string or byte array, returns string
+- `utility-belt.type` - type checking utilities
+  - `atom? <thing>`
 - `utility-belt.compile` - macros for conditional compilation
-- `utility-belt.resources` - readers for `.txt`, `.json`, and `.edn` resources
+- `utility-belt.resources` - readers for `.txt`, `.json`, and `.edn` resources:
+  - `load-edn <fname>`
+  - `load-json <fname> [keywordize?]`
+  - `load-plain-text <fname>`
 
 ### Application utilities
 
 
-- `utility-belt.lifecycle` - easy management of JVM process shutdown hooks
+#### `utility-belt.lifecycle`
+
+Provides easy management of JVM process shutdown hooks.
+Typical usage:
+
+``` clojure
+(ns my.app
+  (:require [utility-belt.lifecycle :as lifecycle]
+            [my.app.entrypoint :as entrypoint]))
+
+
+(defn -main [& args]
+  (let [system (entrypoint/production)]
+    (lifecycle/register-shutdown-hooks!
+     {:stop-system (fn [] (entrypoint/stop-system system))
+      :bye (fn [] (log/info "Bye!"))})
+
+    system))
+
+
+;; you can also register shutdown hooks from anywhere in your code
+;; although it's not recommended to do so
+
+(utility-belt.lifecycle/add-shutdown-hook :bye (fn [] (log/info "Bye!")))
+
+
+```
 
 
 ### Component utilities
 
 
 - `utility-belt.component` - utilities for making it easier to create components, and systems
+  - `deps` - turns a vector of keywords and maps into a map of dependencies, useful for dependency lists where not everything needs to be aliased
+  - `using+` - like `component/using` but supports mixed map and keyword values in dependencies list
+  - `map->system` - given a system map, returns a `SystemMap` instance, makes it easier to compose systems
+  - `map->component` - given a map with `:init, :start, :stop` keys, returns a map which implements `Lifecycle` protocol **not a record!**
+
+Also:
   - `utility-belt.component.nrepl` - pre-built component for the nREPL server
 
-- `utility-belt.component.system` - utilities for managing systems of components for dev, test and production (see below), boilerplate reduction
+- `utility-belt.component.system` - utilities for managing systems of components for dev, test and production (see below), boilerplate reduction, see below
 
 
 #### `ut.c.system`

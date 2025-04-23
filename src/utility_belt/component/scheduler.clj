@@ -22,7 +22,7 @@
              (if (:executor this)
                (do
                  (log/warnf "stopping %s scheduler pool" name)
-                 (concurrent/stop-scheduler-pool (:executor this))
+                 (concurrent/shutdown-scheduler-pool (:executor this))
                  (assoc this :executor nil))
                this))}))
 

@@ -1,7 +1,7 @@
 (ns utility-belt.component.scheduler
   "Simple wrapper around `ScheduledThreadPoolExecutor` nothing fancy"
   (:require
-   [clojure.tools..logging :as log]
+   [clojure.tools.logging :as log]
    [utility-belt.concurrent :as concurrent]
    [utility-belt.component :as component.util]))
 
@@ -47,8 +47,8 @@
                                                               {:handler (fn scheduled' []
                                                                           (try
                                                                             (handler (dissoc this :scheduler :task))
-                                                                            (catch Exception err
-                                                                              (log/error err (format "recurring task '%s' failed" name)))))
+                                                                            (catch Throwable err
+                                                                              (log/errorf err "recurring task '%s' failed" name))))
                                                                :period-ms period-ms
                                                                :delay-ms delay-ms})))))
 

@@ -7,11 +7,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runner_image: ["openjdk-11-lein-2.9.6", "temurin-21-lein-bullseye-slim", "temurin-24-lein-bullseye-slim"]
+
     container:
-      image: clojure:openjdk-11-lein-2.9.6
+      image: clojure:${{ matrix.runner_image }}
 
     steps:
     - uses: actions/checkout@v4.2.1

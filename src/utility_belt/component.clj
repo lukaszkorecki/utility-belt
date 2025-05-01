@@ -1,7 +1,6 @@
 (ns utility-belt.component
   (:require
-   [com.stuartsierra.component :as component]
-   [utility-belt.lifecycle :as lifecycle]))
+   [com.stuartsierra.component :as component]))
 
 (defn deps
   "Converts a mixed list of dependencies into a

@@ -206,27 +206,26 @@
                                  (finally
                                    (stop-system))))))))
 
-(comment
-  #_{:clj-kondo/ignore [:namespace-name-mismatch]}
-  (in-ns 'app.repl)
+#_(comment
+    (in-ns 'app.repl)
 
-  (let [{:keys [start-system stop-system get-system]} (setup-for-dev {:component-map-fn 'app.system/development
-                                                                      :reloadable? true})]
+    (let [{:keys [start-system stop-system get-system]} (setup-for-dev {:component-map-fn 'app.system/development
+                                                                        :reloadable? true})]
 
-    (def system get-system)
-    (def start start-system)
-    (def restart (fn [] (stop-system) (start-system)))
-    (def stop stop-system))
+      (def system get-system)
+      (def start start-system)
+      (def restart (fn [] (stop-system) (start-system)))
+      (def stop stop-system))
 
-  (in-ns 'app.tests)
-  (let [{:keys [get-system use-test-system]} (setup-for-test {:component-map-fn 'app.system/test})]
+    (in-ns 'app.tests)
+    (let [{:keys [get-system use-test-system]} (setup-for-test {:component-map-fn 'app.system/test})]
 
-    (def system get-system)
+      (def system get-system)
 
-    (def with-test-system use-test-system))
+      (def with-test-system use-test-system))
 
-;; simple use case:
-  (clojure.test/use-fixtures :once with-test-system)
-  ;; with extra components:
-  (clojure.test/use-fixtures :once (fn [test]
-                                     (with-test-system test {:extra-component :extra}))))
+    ;; simple use case:
+    (clojure.test/use-fixtures :once with-test-system)
+    ;; with extra components:
+    (clojure.test/use-fixtures :once (fn [test]
+                                       (with-test-system test {:extra-component :extra}))))

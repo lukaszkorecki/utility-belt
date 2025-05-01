@@ -3,7 +3,6 @@
   (:import [java.util.concurrent
             Executors
             ExecutorService
-            ThreadPoolExecutor
             TimeUnit
             ScheduledThreadPoolExecutor
             ThreadFactory
@@ -13,7 +12,6 @@
 
 (set! *warn-on-reflection* true)
 
-#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (def virtual-threads-available?
   (ub.compile/compile-if (Thread/ofVirtual)
                          true

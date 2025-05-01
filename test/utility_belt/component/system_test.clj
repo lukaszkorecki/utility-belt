@@ -1,19 +1,19 @@
 (ns utility-belt.component.system-test
-  (:require [clojure.test :refer [deftest testing is use-fixtures]]
+  (:require [clojure.test :refer [deftest testing is]]
             [utility-belt.component :as util.component]
             [utility-belt.component.system :as util.system]))
 
-(def cnt
+(def counter
   (atom 0))
 
 (defn make-system []
   {:static :value
    :thing (util.component/map->component {:start (fn [this]
-                                                   (swap! cnt inc)
+                                                   (swap! counter inc)
                                                    (assoc this :started true :stopped false))
 
                                           :stop (fn [this]
-                                                  (swap! cnt dec)
+                                                  (swap! counter dec)
                                                   (assoc this :stopped true :started false))})})
 
 (deftest setup-for-dev-test
@@ -25,7 +25,7 @@
       (testing "system starts only once"
         (start-system)
         (start-system)
-        (is (= 1 @cnt)))
+        (is (= 1 @counter)))
 
       (testing "we can get the 'components'"
         (is (= :value (-> (get-system) :static))))
@@ -43,7 +43,7 @@
 
       (is (nil? (-> @@(find-var 'utility-belt.component.system-test.dev-sys/system) :thing :started)))
       (testing "stop handler was called on the component"
-        (is (zero? @cnt))))
+        (is (zero? @counter))))
 
     (testing "starting again, but with extra components"
       (start-system {:another-static :another-thing})
@@ -62,8 +62,8 @@
         (use-test-system (fn []
                            (is (= :value (-> (get-system) :static)))
                            (is (= true (-> (get-system) :thing :started)))
-                           (is (= 1 @cnt)))))
+                           (is (= 1 @counter)))))
 
       (testing "nothing is running, again"
-        (is (zero? @cnt))
+        (is (zero? @counter))
         (is (nil? @@(find-var 'utility-belt.component.system-test.dev-sys/system)))))))

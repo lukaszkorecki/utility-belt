@@ -14,7 +14,7 @@ jobs:
         runner_image: ["openjdk-11-lein-2.9.6", "temurin-21-lein-bullseye-slim", "temurin-24-lein-bullseye-slim"]
 
     container:
-      image: clojure:{{ matrix.runner_image }}
+      image: clojure:${{ matrix.runner_image }}
 
     steps:
     - uses: actions/checkout@v4.2.1

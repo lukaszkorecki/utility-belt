@@ -1,7 +1,8 @@
 (ns utility-belt.concurrent
+  (:require [utility-belt.compile :as ub.compile])
   (:import [java.util.concurrent
             Executors
-            Executor
+            ExecutorService
             ThreadPoolExecutor
             TimeUnit
             ScheduledThreadPoolExecutor
@@ -11,6 +12,12 @@
            [java.util.concurrent.atomic AtomicLong]))
 
 (set! *warn-on-reflection* true)
+
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+(def virtual-threads-available?
+  (ub.compile/compile-if (Thread/ofVirtual)
+                         true
+                         false))
 
 (defn- thread-factory [{:keys [name daemon?]}]
   (let [thread-id (AtomicLong. 0)]
@@ -22,16 +29,16 @@
 
 (defn make-task-pool
   "Make a new ThreadPoolExecutor."
-  ^ThreadPoolExecutor
+  ^ExecutorService
   [{:keys [thread-count pool-name]}]
   (Executors/newFixedThreadPool ^long thread-count
                                 ^ThreadFactory (thread-factory {:name pool-name :daemon? false})))
 
 (defn shutdown-task-pool
-  ([^ThreadPoolExecutor pool]
+  ([^ExecutorService pool]
    (shutdown-task-pool pool {:max-wait-time-ms 1000}))
-  ([^ThreadPoolExecutor pool {:keys [max-wait-time-ms]}]
-   {:pre [(instance? ThreadPoolExecutor pool)
+  ([^ExecutorService pool {:keys [max-wait-time-ms]}]
+   {:pre [(instance? ExecutorService pool)
           (pos? max-wait-time-ms)]}
    (try
      (.shutdown pool)
@@ -40,7 +47,7 @@
        (.shutdownNow pool)
        (.interrupt (Thread/currentThread))))))
 
-(defn run-tasks [^ThreadPoolExecutor exec-pool {:keys [tasks max-wait-time-ms]}]
+(defn run-tasks [^ExecutorService exec-pool {:keys [tasks max-wait-time-ms]}]
   (->> tasks
        (mapv (fn submit' [^Callable task] (.submit exec-pool task)))
        (mapv (fn get' [fut] (deref fut max-wait-time-ms :task-timeout)))))

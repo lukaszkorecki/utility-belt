@@ -17,8 +17,11 @@
   (log/debugf "registered hook '%s'" name)
   (let [hook* (Thread. ^Runnable
                        (fn hook' []
-                         (log/debugf "running shutdown hook '%s'" name)
-                         (hook-fn)))]
+                         (try
+                           (log/debugf "executing shutdown hook '%s'" name)
+                           (hook-fn)
+                           (catch Throwable err
+                             (log/errorf err "failed to execute shutdown hook '%s'" name)))))]
     (Runtime/.addShutdownHook runtime hook*)
     (swap! registerd-hooks assoc name hook*)))
 

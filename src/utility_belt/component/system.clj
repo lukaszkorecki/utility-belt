@@ -39,8 +39,9 @@
   (def app (atom nil))
 
   (defn -main [& _args]
-    (component/init-app-system {:store app
-                                :component-map-fn  system/production)))
+    (component/setup-for-production {:store app
+                                     :service \"my service\"
+                                     :component-map-fn  system/production)))
   ```
   "
   [{:keys [store service component-map-fn]}]

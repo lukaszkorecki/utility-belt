@@ -28,34 +28,36 @@
 
 (defn create-task
   "Creates a scheduled task component, NOTE: it requires a :scheduler dependency to be present"
-  [{:keys [name period-ms delay-ms handler]
-    :or {delay-ms 0}
+  [{:keys [name period-ms delay-ms handler mode]
+    :or {delay-ms 0
+         mode ::concurrent/fixed-rate}
     :as opts}]
   {:pre [(not-empty name)
          (nat-int? period-ms)
          (fn? handler)]}
   (component.util/map->component
-    {:init opts
-     :start (fn [this]
-              (if (:task this)
-                this
-                (do
-                  (log/infof "Creating scheduled task %s" name)
-                  (assert (concurrent/scheduler-pool? (:executor (:scheduler this)))
-                          "Scheduled task requires a :scheduler dependency ")
-                  (assoc this :task (concurrent/schedule-task (-> this :scheduler :executor)
-                                                              {:handler (fn scheduled' []
-                                                                          (try
-                                                                            (handler (dissoc this :scheduler :task))
-                                                                            (catch Throwable err
-                                                                              (log/errorf err "recurring task '%s' failed" name))))
-                                                               :period-ms period-ms
-                                                               :delay-ms delay-ms})))))
-
-     :stop (fn [this]
+   {:init opts
+    :start (fn [this]
              (if (:task this)
+               this
                (do
-                 (log/warnf "stopping task %s" (:name this))
-                 ;; no need to do anything special, the task will be stopped when the pool is stopped
-                 (assoc this :task nil))
-               this))}))
+                 (log/infof "Creating scheduled task %s" name)
+                 (assert (concurrent/scheduler-pool? (:executor (:scheduler this)))
+                         "Scheduled task requires a :scheduler dependency ")
+                 (assoc this :task (concurrent/schedule-task (-> this :scheduler :executor)
+                                                             {:handler (fn scheduled' []
+                                                                         (try
+                                                                           (handler (dissoc this :scheduler :task))
+                                                                           (catch Throwable err
+                                                                             (log/errorf err "recurring task '%s' failed" name))))
+                                                              :mode mode
+                                                              :period-ms period-ms
+                                                              :delay-ms delay-ms})))))
+
+    :stop (fn [this]
+            (if (:task this)
+              (do
+                (log/warnf "stopping task %s" (:name this))
+                ;; no need to do anything special, the task will be stopped when the pool is stopped
+                (assoc this :task nil))
+              this))}))

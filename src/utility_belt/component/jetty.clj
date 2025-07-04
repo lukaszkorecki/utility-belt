@@ -5,6 +5,7 @@
   (:import
    [org.eclipse.jetty.server Server]))
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn create
   "Creates a component that runs a Jetty server with the provided Ring handler.
    The handler should be a function that takes a request map and returns a response map.

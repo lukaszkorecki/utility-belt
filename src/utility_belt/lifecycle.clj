@@ -16,12 +16,12 @@
          (fn? hook-fn)]}
   (log/debugf "registered hook '%s'" name)
   (let [hook* (Thread. ^Runnable
-                       (fn hook' []
-                         (try
-                           (log/debugf "executing shutdown hook '%s'" name)
-                           (hook-fn)
-                           (catch Throwable err
-                             (log/errorf err "failed to execute shutdown hook '%s'" name)))))]
+               (fn hook' []
+                 (try
+                   (log/debugf "executing shutdown hook '%s'" name)
+                   (hook-fn)
+                   (catch Throwable err
+                     (log/errorf err "failed to execute shutdown hook '%s'" name)))))]
     (Runtime/.addShutdownHook runtime hook*)
     (swap! registerd-hooks assoc name hook*)))
 
@@ -41,6 +41,7 @@
           (add-shutdown-hook name hook-fn))
         hooks))
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn remove-shutdown-hooks!
   "Clear all registered shutdown hooks"
   []

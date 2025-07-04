@@ -17,7 +17,7 @@
     `(do ~then)
     `(do ~else)))
 
-#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defmacro compile-when
   "Evaluate `exp` and if it returns logical true and doesn't error, expand to `then`
   Otherwise evaluates to `nil`

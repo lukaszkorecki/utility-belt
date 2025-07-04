@@ -25,9 +25,9 @@
   (let [thread-id (AtomicLong. 0)]
     (reify ThreadFactory
       (^Thread newThread [_ ^Runnable r]
-       (doto (Thread. r)
-         (.setDaemon daemon?)
-         (.setName (str name "-" (AtomicLong/.getAndIncrement thread-id))))))))
+        (doto (Thread. r)
+          (.setDaemon daemon?)
+          (.setName (str name "-" (AtomicLong/.getAndIncrement thread-id))))))))
 
 (defn make-task-pool
   "Make a new ThreadPoolExecutor that will execute tasks in parallel."

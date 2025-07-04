@@ -23,7 +23,18 @@ run-tests: run-tests-java-11 run-tests-java-21
 publish:
 	@lein deploy clojars
 
+lint:
+	clojure-lsp diagnostics
+
+format:
+	clojure-lsp format
+
+test:
+	lein test
 
 help:
 	@echo "Available tasks:"
 	@grep -E '^[a-z-]+:' ./Makefile | sed 's/:.*//g'
+
+
+.PHONY: _nuke-java-version _nuke-tmp-test-file run-tests-java-11 run-tests-java-21 run-tests publish lint test help

@@ -19,6 +19,7 @@
       clojure.lang.Namespace/.getName
       symbol))
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn setup-for-production
   "Simplifies wiring up the system as the app entry point, with a graceful shutdown.
   This is helpful to reduce boilerplate in the main namespace.

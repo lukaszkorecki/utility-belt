@@ -3,6 +3,7 @@
   (:require [utility-belt.component :as component]
             nrepl.server))
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn create
   "Creates an nREPL server component, by default it binds to loopback address"
   [{:keys [host port]

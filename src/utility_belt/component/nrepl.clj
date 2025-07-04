@@ -1,4 +1,5 @@
 (ns utility-belt.component.nrepl
+  "Provides `nrepl` component - requires nrepl to be provided as a dependency"
   (:require [utility-belt.component :as component]
             nrepl.server))
 

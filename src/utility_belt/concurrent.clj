@@ -1,4 +1,5 @@
 (ns utility-belt.concurrent
+  "A set of helpers for working with Java's concurrency constructs"
   (:require [utility-belt.compile :as ub.compile])
   (:import [java.util.concurrent
             Executors
@@ -13,11 +14,14 @@
 (set! *warn-on-reflection* true)
 
 (def virtual-threads-available?
+  "Check if virtual threads are available on the current JVM"
   (ub.compile/compile-if (Thread/ofVirtual)
                          true
                          false))
 
-(defn- thread-factory [{:keys [name daemon?]}]
+(defn- thread-factory
+  "Create a new thread factory for use with thread pools"
+  [{:keys [name daemon?]}]
   (let [thread-id (AtomicLong. 0)]
     (reify ThreadFactory
       (^Thread newThread [_ ^Runnable r]
@@ -26,13 +30,14 @@
          (.setName (str name "-" (AtomicLong/.getAndIncrement thread-id))))))))
 
 (defn make-task-pool
-  "Make a new ThreadPoolExecutor."
+  "Make a new ThreadPoolExecutor that will execute tasks in parallel."
   ^ExecutorService
   [{:keys [thread-count pool-name]}]
   (Executors/newFixedThreadPool ^long thread-count
                                 ^ThreadFactory (thread-factory {:name pool-name :daemon? false})))
 
 (defn shutdown-task-pool
+  "Shutdown a task pool, waiting for tasks to complete."
   ([^ExecutorService pool]
    (shutdown-task-pool pool {:max-wait-time-ms 1000}))
   ([^ExecutorService pool {:keys [max-wait-time-ms]}]
@@ -45,7 +50,9 @@
        (.shutdownNow pool)
        (.interrupt (Thread/currentThread))))))
 
-(defn run-tasks [^ExecutorService exec-pool {:keys [tasks max-wait-time-ms]}]
+(defn run-tasks
+  "Run a collection of tasks in a thread pool, waiting for them to complete."
+  [^ExecutorService exec-pool {:keys [tasks max-wait-time-ms]}]
   (->> tasks
        (mapv (fn submit' [^Callable task] (.submit exec-pool task)))
        (mapv (fn get' [fut] (deref fut max-wait-time-ms :task-timeout)))))
@@ -73,16 +80,22 @@
 
 ;; Scheduler
 
-(defn make-scheduler-pool [{:keys [name thread-count] :or {thread-count 2}}]
+(defn make-scheduler-pool
+  "Create a new scheduler pool for running recurring tasks."
+  [{:keys [name thread-count] :or {thread-count 2}}]
   (ScheduledThreadPoolExecutor. ^long thread-count
                                 ^ThreadFactory (thread-factory {:name name :daemon? true})
                                 ;; TODO: add logging variant of this:
                                 (ThreadPoolExecutor$AbortPolicy.)))
 
-(defn scheduler-pool? [thing]
+(defn scheduler-pool?
+  "Check if a given thing is a scheduler pool."
+  [thing]
   (instance? ScheduledThreadPoolExecutor thing))
 
-(defn shutdown-scheduler-pool [^ScheduledThreadPoolExecutor pool]
+(defn shutdown-scheduler-pool
+  "Shutdown a scheduler pool, waiting for tasks to complete."
+  [^ScheduledThreadPoolExecutor pool]
   (try
     (.shutdown pool)
     (.awaitTermination pool 10 java.util.concurrent.TimeUnit/SECONDS)

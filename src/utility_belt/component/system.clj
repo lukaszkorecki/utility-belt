@@ -1,4 +1,5 @@
 (ns utility-belt.component.system
+  "Functions for managing the lifecycle of a component-based system."
   (:require
    [clojure.tools.logging :as log]
    [clojure.string :as str]

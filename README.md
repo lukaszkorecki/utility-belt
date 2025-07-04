@@ -28,18 +28,12 @@ Thank you to [Peerspace](https://peerspace.com) for their continued support in m
 ### General utilities
 
 
-- `utility-belt.base64` - wraps JDK base64 encoding and decoding with string and byte array methods
-  - `decode` - accepts string or byte array, returns byte array
-  - `decode->str` - accepts string or byte array, returns string
-  - `encode` - accepts string or byte array, returns byte array
-  - `encode->str` - accepts string or byte array, returns string
-- `utility-belt.type` - type checking utilities
-  - `atom? <thing>`
-- `utility-belt.compile` - macros for conditional compilation
+- `utility-belt.base64` - Encoding and decoding to and from base64
+- `utility-belt.compile` - Utilities for conditional code evaluation/loading
+- `utility-belt.type` - A collection of type-checking predicates.
 - `utility-belt.resources` - readers for `.txt`, `.json`, and `.edn` resources:
-  - `load-edn <fname>`
-  - `load-json <fname> [keywordize?]`
-  - `load-plain-text <fname>`
+- `utility-belt.concurrent` - A set of helpers for working with Java's concurrency constructs
+- `utility-belt.lifecycle` - Tools for managing application lifecycle
 
 ### Application utilities
 
@@ -77,15 +71,10 @@ Typical usage:
 
 
 - `utility-belt.component` - utilities for making it easier to create components, and systems
-  - `deps` - turns a vector of keywords and maps into a map of dependencies, useful for dependency lists where not everything needs to be aliased
-  - `using+` - like `component/using` but supports mixed map and keyword values in dependencies list
-  - `map->system` - given a system map, returns a `SystemMap` instance, makes it easier to compose systems
-  - `map->component` - given a map with `:init, :start, :stop` keys, returns a map which implements `Lifecycle` protocol **not a record!**
-
-Also:
-  - `utility-belt.component.nrepl` - pre-built component for the nREPL server
-
-- `utility-belt.component.system` - utilities for managing systems of components for dev, test and production (see below), boilerplate reduction, see below
+- `utility-belt.component.jetty` - Provides a component for running a Jetty server with a Ring handler. Requires `ring/ring-jetty-adapter` dependency.
+- `utility-belt.component.nrepl` - A component for running an nREPL server.
+- `utility-belt.component.scheduler` - A component for scheduling tasks to run at a fixed rate.
+- `utility-belt.component.system` - Functions for managing the lifecycle of a component-based system.
 
 
 #### `ut.c.system`

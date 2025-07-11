@@ -12,6 +12,10 @@
 
 (set! *warn-on-reflection* true)
 
+(def num-cpus
+  "Number of CPUs available to the JVM, used to determine the number of threads in a thread pool."
+  (max 1 (.. Runtime getRuntime availableProcessors)))
+
 (def virtual-threads-available?
   (ub.compile/compile-if (Thread/ofVirtual)
                          true
@@ -90,15 +94,31 @@
       (.shutdownNow pool)
       (.interrupt (Thread/currentThread)))))
 
+(def ^:private modes #{::fixed-rate ::fixed-delay})
+
 (defn schedule-task
   "Schedule a recurring task running (very roughly) every `period-ms` milliseconds.
   and executing the `handler` function."
-  [^ScheduledThreadPoolExecutor pool {:keys [handler period-ms delay-ms]}]
+  [^ScheduledThreadPoolExecutor pool {:keys [handler period-ms delay-ms mode]
+                                      :or {delay-ms 0
+                                           mode ::fixed-rate}}]
   {:pre [(fn? handler)
          (nat-int? period-ms)
-         (not (neg? delay-ms))]}
-  (ScheduledThreadPoolExecutor/.scheduleAtFixedRate pool
-                                                    ^Runnable handler
-                                                    ^long delay-ms
-                                                    ^long period-ms
-                                                    TimeUnit/MILLISECONDS))
+         (not (neg? delay-ms))
+         (modes mode)]}
+
+  (cond
+    (= mode ::fixed-rate) (ScheduledThreadPoolExecutor/.scheduleAtFixedRate pool
+                                                                            ^Runnable handler
+                                                                            ^long delay-ms
+                                                                            ^long period-ms
+                                                                            TimeUnit/MILLISECONDS)
+
+    (= mode ::fixed-delay) (ScheduledThreadPoolExecutor/.scheduleWithFixedDelay pool
+                                                                                ^Runnable handler
+                                                                                ^long delay-ms
+                                                                                ^long period-ms
+                                                                                TimeUnit/MILLISECONDS)
+
+    :else (throw (ex-info "Invalid mode for scheduling task"
+                          {:mode mode :valid-modes modes}))))

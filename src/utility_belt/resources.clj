@@ -3,7 +3,6 @@
             [clojure.java.io :as io]
             [cheshire.core :as json]))
 
-
 (defn load-edn
   "Given a resource name, reads the EDN file and returns a Clojure data structure."
   [resource-name]

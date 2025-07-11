@@ -7,21 +7,21 @@
 
 (def sys
   (c/map->system
-    {:scheduler (comp.scheduler/create-pool {:name "Test"})
-     :store (atom [])
-     :task-1 (component/using
-               (comp.scheduler/create-task {:name "task 1"
-                                            :period-ms 100
-                                            :handler (fn [{:keys [store]}]
-                                                       (swap! store conj :task-1))})
-               [:scheduler :store])
+   {:scheduler (comp.scheduler/create-pool {:name "Test"})
+    :store (atom [])
+    :task-1 (component/using
+             (comp.scheduler/create-task {:name "task 1"
+                                          :period-ms 100
+                                          :handler (fn [{:keys [store]}]
+                                                     (swap! store conj :task-1))})
+             [:scheduler :store])
 
-     :task-2 (component/using
-               (comp.scheduler/create-task {:name "task 2"
-                                            :period-ms 200
-                                            :handler (fn [{:keys [store]}]
-                                                       (swap! store conj :task-2))})
-               [:scheduler :store])}))
+    :task-2 (component/using
+             (comp.scheduler/create-task {:name "task 2"
+                                          :period-ms 200
+                                          :handler (fn [{:keys [store]}]
+                                                     (swap! store conj :task-2))})
+             [:scheduler :store])}))
 
 (def system (atom nil))
 

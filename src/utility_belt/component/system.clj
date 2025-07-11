@@ -1,4 +1,5 @@
 (ns utility-belt.component.system
+  "Functions for managing the lifecycle of a component-based system."
   (:require
    [clojure.tools.logging :as log]
    [clojure.string :as str]
@@ -18,6 +19,7 @@
       clojure.lang.Namespace/.getName
       symbol))
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn setup-for-production
   "Simplifies wiring up the system as the app entry point, with a graceful shutdown.
   This is helpful to reduce boilerplate in the main namespace.
@@ -68,18 +70,18 @@
                       (require '[clojure.tools.namespace.repl])
                       true)
                     ;; we can refresh
-                    (do
-                      (def tools-ns-available? true)
-                      (def refresh
-                        (requiring-resolve 'clojure.tools.namespace.repl/refresh))
-                      (def disable-reload!
-                        (requiring-resolve 'clojure.tools.namespace.repl/disable-reload!)))
+  (do
+    (def tools-ns-available? true)
+    (def refresh
+      (requiring-resolve 'clojure.tools.namespace.repl/refresh))
+    (def disable-reload!
+      (requiring-resolve 'clojure.tools.namespace.repl/disable-reload!)))
 
                     ;; we can't refresh, provide no-ops
-                    (do
-                      (def tools-ns-available? false)
-                      (def refresh identity)
-                      (def disable-reload! identity)))
+  (do
+    (def tools-ns-available? false)
+    (def refresh identity)
+    (def disable-reload! identity)))
 
 (defn setup-for-dev
   "Sets up a dev-system namespace which will provide start, stop and getter function as well

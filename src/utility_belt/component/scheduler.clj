@@ -10,21 +10,21 @@
   [{:keys [name] :as opts}]
   {:pre [(not-empty name)]}
   (component.util/map->component
-    {:init opts
-     :start (fn [this]
-              (if (:executor this)
-                this
-                (do
-                  (log/infof "Creating scheduler pool %s" name)
-                  (assoc this :executor (concurrent/make-scheduler-pool opts)))))
-
-     :stop (fn [this]
+   {:init opts
+    :start (fn [this]
              (if (:executor this)
+               this
                (do
-                 (log/warnf "stopping %s scheduler pool" name)
-                 (concurrent/shutdown-scheduler-pool (:executor this))
-                 (assoc this :executor nil))
-               this))}))
+                 (log/infof "Creating scheduler pool %s" name)
+                 (assoc this :executor (concurrent/make-scheduler-pool opts)))))
+
+    :stop (fn [this]
+            (if (:executor this)
+              (do
+                (log/warnf "stopping %s scheduler pool" name)
+                (concurrent/shutdown-scheduler-pool (:executor this))
+                (assoc this :executor nil))
+              this))}))
 
 (defn create-task
   "Creates a scheduled task component, NOTE: it requires a :scheduler dependency to be present"

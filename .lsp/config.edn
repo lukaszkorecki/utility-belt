@@ -1,0 +1,5 @@
+{:cljfmt
+ {:indents
+  {compile-when [[:inner 0]]
+   compile-if [[:inner 0]]}}
+ :auto-add-ns-to-new-files? true}

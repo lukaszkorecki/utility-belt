@@ -13,4 +13,5 @@
 
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev
-             {:dependencies [[ch.qos.logback/logback-classic "1.5.18"]]}})
+             {:dependencies [[ch.qos.logback/logback-classic "1.5.18"]
+                             [ring/ring-jetty-adapter "1.14.2"]]}})

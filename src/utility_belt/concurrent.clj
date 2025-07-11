@@ -20,8 +20,8 @@
 (def virtual-threads-available?
   "Check if virtual threads are available on the current JVM"
   (ub.compile/compile-if (Thread/ofVirtual)
-                         true
-                         false))
+    true
+    false))
 
 (defn- thread-factory
   "Create a new thread factory for use with thread pools"
@@ -121,17 +121,17 @@
          (modes mode)]}
 
   (cond
-    (= mode ::fixed-rate) (ScheduledThreadPoolExecutor/.scheduleAtFixedRate pool
-                                                                            ^Runnable handler
-                                                                            ^long delay-ms
-                                                                            ^long period-ms
-                                                                            TimeUnit/MILLISECONDS)
+   (= mode ::fixed-rate) (ScheduledThreadPoolExecutor/.scheduleAtFixedRate pool
+                                                                           ^Runnable handler
+                                                                           ^long delay-ms
+                                                                           ^long period-ms
+                                                                           TimeUnit/MILLISECONDS)
 
-    (= mode ::fixed-delay) (ScheduledThreadPoolExecutor/.scheduleWithFixedDelay pool
-                                                                                ^Runnable handler
-                                                                                ^long delay-ms
-                                                                                ^long period-ms
-                                                                                TimeUnit/MILLISECONDS)
+   (= mode ::fixed-delay) (ScheduledThreadPoolExecutor/.scheduleWithFixedDelay pool
+                                                                               ^Runnable handler
+                                                                               ^long delay-ms
+                                                                               ^long period-ms
+                                                                               TimeUnit/MILLISECONDS)
 
-    :else (throw (ex-info "Invalid mode for scheduling task"
-                          {:mode mode :valid-modes modes}))))
+   :else (throw (ex-info "Invalid mode for scheduling task"
+                  {:mode mode :valid-modes modes}))))

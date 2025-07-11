@@ -28,8 +28,9 @@
 
 (defn create-task
   "Creates a scheduled task component, NOTE: it requires a :scheduler dependency to be present"
-  [{:keys [name period-ms delay-ms handler]
-    :or {delay-ms 0}
+  [{:keys [name period-ms delay-ms handler mode]
+    :or {delay-ms 0
+         mode ::concurrent/fixed-rate}
     :as opts}]
   {:pre [(not-empty name)
          (nat-int? period-ms)
@@ -49,6 +50,7 @@
                                                                            (handler (dissoc this :scheduler :task))
                                                                            (catch Throwable err
                                                                              (log/errorf err "recurring task '%s' failed" name))))
+                                                              :mode mode
                                                               :period-ms period-ms
                                                               :delay-ms delay-ms})))))
 
@@ -56,6 +58,6 @@
             (if (:task this)
               (do
                 (log/warnf "stopping task %s" (:name this))
-                 ;; no need to do anything special, the task will be stopped when the pool is stopped
+                ;; no need to do anything special, the task will be stopped when the pool is stopped
                 (assoc this :task nil))
               this))}))

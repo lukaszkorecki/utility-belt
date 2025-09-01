@@ -16,14 +16,14 @@
   Note that `:join?` is set to `false` by default, and cannot be overridden."
   [{:keys [config handler]
     :or {config {:port 3000 :host "0.0.0.0"}}}]
-  {:pre [(fn? handler)
+  {:pre [handler
          (pos? (-> config :port))]}
   (component/map->component
    {:init {:config (merge config {:join? false})}
     :start (fn [this]
              (if (:jetty this)
                this
-               (let [deps (dissoc this :config)
+               (let [deps (dissoc this :config :handler)
                      wrapped-handler (fn with-deps' [request]
                                        (handler (assoc request :component deps)))]
                  (assoc this :jetty (jetty/run-jetty wrapped-handler

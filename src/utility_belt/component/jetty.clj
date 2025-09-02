@@ -16,7 +16,7 @@
   Note that `:join?` is set to `false` by default, and cannot be overridden."
   [{:keys [config handler]
     :or {config {:port 3000 :host "0.0.0.0"}}}]
-  {:pre [(fn? handler)
+  {:pre [(or (fn? handler) (var? handler))
          (pos? (-> config :port))]}
   (component/map->component
    {:init {:config (merge config {:join? false})}

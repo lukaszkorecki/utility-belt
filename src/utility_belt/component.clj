@@ -58,15 +58,37 @@
   map representing the component, returns a component.
   Simplifies extending-via-metadata pattern to ensure right naming of things.
 
-  > [!NOTE]
-  > this is only suitable for simpler components, with minimal state that don't need
-  >  to implement any other protocols or interfaces"
+  If your component needs to implement addional protocol(s), which have `:extend-via-metadata true` set
+  your component definition should include all the keys required by those protocol as fully qualified symbols or keywords:
+
+  ```clojure
+  (ns app.sth)
+  (defprotocol Bananas
+    (do-thing [this])
+    (do-more [this]))
+
+
+  (ns app.sth.component)
+
+  (defn create [conf]
+     (util.component/map->component {:init conf ;; initial state of the component
+                                     :start (fn [this] (assoc this :started true))
+                                     :stop  (fn [this] (assoc this :stopped true))
+                                     ;; protocol methods, symbols work too!
+                                     :app.sth/do-thing (fn [this] :did-thing)
+                                     :app.sth/do-more  (fn [this] :did-more)}))
+  ```
+  "
   [{:keys [init
            start
            stop]
     :or {init {}
          start identity
-         stop identity}}]
+         stop identity}
+    :as component-def}]
   (with-meta init
-    {'com.stuartsierra.component/start start
-     'com.stuartsierra.component/stop stop}))
+    (merge (-> (or component-def {})
+               (dissoc :init :start :stop)
+               (update-keys symbol))
+           {'com.stuartsierra.component/start start
+            'com.stuartsierra.component/stop stop})))

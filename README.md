@@ -76,6 +76,28 @@ Typical usage:
 - `utility-belt.component.scheduler` - A component for scheduling tasks to run at a fixed rate.
 - `utility-belt.component.system` - Functions for managing the lifecycle of a component-based system.
 
+#### `ut.c.component`
+
+`map->component` function can be used to create components out of maps, rather than records, this is useful when creating a record is an overkill or you want to easily provide a mock implementation of a component:
+
+```clojure
+(ns app.publisher)
+(defprotocol Publisher
+  :extend-via-metadata true
+  (send! [this message]))
+
+
+(ns app.system)
+
+(def sys-map
+  {:publisher (map->component {:init {:queue-name "foobar" }
+                               :start (fn [this] (assoc this :conn (pub/create-connection)))
+                               :stop (fn [this] (update this :conn pub/connection-close))
+                               :app.publisher/send! (fn [this message] (pub/send! (:conn this) message))})})
+
+```
+
+this is a very simple example, your start and stop functions have to obey the same rules as record-based components etc.
 
 #### `ut.c.system`
 

@@ -75,8 +75,8 @@
                                      :start (fn [this] (assoc this :started true))
                                      :stop  (fn [this] (assoc this :stopped true))
                                      ;; protocol methods, symbols work too!
-                                     :app.sth/Bananas/do-thing (fn [this] :did-thing)
-                                     :app.sth/Bananas/do-more  (fn [this] :did-more)}))
+                                     :app.sth/do-thing (fn [this] :did-thing)
+                                     :app.sth/do-more  (fn [this] :did-more)}))
   ```
   "
   [{:keys [init

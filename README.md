@@ -1,4 +1,4 @@
-# utility-belt
+# 🦇 utility-belt
 
 > Although seemingly unremarkable in appearance, the utility belt is one of Batman's most important tools in fighting crime.
 

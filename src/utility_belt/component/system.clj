@@ -142,7 +142,8 @@
                                                        (-> ((requiring-resolve component-map-fn))
                                                            (merge additional-component-map)
                                                            component/map->SystemMap
-                                                           component/start))))))))))
+                                                           component/start))))))))
+                      ::started))
 
      :stop-system (fn stop-system' []
                     (swap! sys-atom
@@ -154,7 +155,8 @@
                                  (component/stop sys)
                                  nil)
                                (when debug?
-                                 (log/debugf "System not running in %s" sys-ns))))))
+                                 (log/debugf "System not running in %s" sys-ns)))))
+                    ::stopped)
 
      :get-system (fn get-system' []
                    @sys-atom)}))

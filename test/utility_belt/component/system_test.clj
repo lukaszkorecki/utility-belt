@@ -18,7 +18,6 @@
 
 (deftest setup-for-dev-test
   (let [{:keys [start-system stop-system get-system]} (util.system/setup-for-dev {:component-map-fn 'utility-belt.component.system-test/make-system
-                                                                                  :ns-to-attach-to 'utility-belt.component.system-test
                                                                                   :reloadable? false})]
 
     (testing "system can be started via provided fns"
@@ -45,8 +44,7 @@
 
 (deftest setup-for-test-test
   (testing "provides utility for unit tests"
-    (let [{:keys [use-test-system get-system]} (util.system/setup-for-test {:component-map-fn 'utility-belt.component.system-test/make-system
-                                                                            :ns-to-attach-to 'utility-belt.component.system-test})]
+    (let [{:keys [use-test-system get-system]} (util.system/setup-for-test {:component-map-fn 'utility-belt.component.system-test/make-system})]
 
       (testing "within the hook, system is started and can be used"
         (use-test-system (fn []

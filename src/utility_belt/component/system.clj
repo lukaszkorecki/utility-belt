@@ -126,23 +126,19 @@
                      ([additional-component-map]
                       (swap! sys-atom (fn [sys]
                                         (if sys
-                                          sys
-                                          (swap! sys-atom
-                                                 (fn [sys]
-                                                   (when reloadable?
-                                                     (refresh))
-                                                   (if sys
-                                                     (do
-                                                       (when debug?
-                                                         (log/debugf "System already running in %s" sys-ns))
-                                                       sys)
-                                                     (do
-                                                       (when debug?
-                                                         (log/debugf "Starting system in %s" sys-ns))
-                                                       (-> ((requiring-resolve component-map-fn))
-                                                           (merge additional-component-map)
-                                                           component/map->SystemMap
-                                                           component/start))))))))
+                                          (do
+                                            (when debug?
+                                              (log/debugf "System already running in %s" sys-ns))
+                                            sys)
+                                          (do
+                                            (when debug?
+                                              (log/debugf "Starting system in %s" sys-ns))
+                                            (when reloadable?
+                                              (refresh))
+                                            (-> ((requiring-resolve component-map-fn))
+                                                (merge additional-component-map)
+                                                component/map->SystemMap
+                                                component/start)))))
                       ::started))
 
      :stop-system (fn stop-system' []

@@ -69,19 +69,17 @@
 (compile/compile-if (do
                       (require '[clojure.tools.namespace.repl])
                       true)
-                    ;; we can refresh
-                    (do
-                      (def tools-ns-available? true)
-                      (def refresh
-                        (requiring-resolve 'clojure.tools.namespace.repl/refresh))
-                      (def disable-reload!
-                        (requiring-resolve 'clojure.tools.namespace.repl/disable-reload!)))
+  (do ;; we can refresh
+    (def tools-ns-available? true)
+    (def refresh
+      (requiring-resolve 'clojure.tools.namespace.repl/refresh))
+    (def disable-reload!
+      (requiring-resolve 'clojure.tools.namespace.repl/disable-reload!)))
 
-                    ;; we can't refresh, provide no-ops
-                    (do
-                      (def tools-ns-available? false)
-                      (def refresh identity)
-                      (def disable-reload! identity)))
+  (do ;; no tools.namespace - provide no-ops
+    (def tools-ns-available? false)
+    (def refresh identity)
+    (def disable-reload! identity)))
 
 (defn setup-for-dev
   "Sets up a dev-system namespace which will provide start, stop and getter function as well

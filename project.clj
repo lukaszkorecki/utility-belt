@@ -1,4 +1,4 @@
-(defproject org.clojars.lukaszkorecki/utility-belt "2.3.1"
+(defproject org.clojars.lukaszkorecki/utility-belt "2.4.0-SNAPSHOT"
   :description "Some of the tools you'll ever need to fight crime and write Clojure stuffs"
   :license "MIT"
   :url "https://github.com/lukaszkorecki/utility-belt"
@@ -6,10 +6,10 @@
                                    :username :env/clojars_username
                                    :password :env/clojars_password}}
 
-  :dependencies [[org.clojure/clojure "1.12.0"]
+  :dependencies [[org.clojure/clojure "1.12.2"]
                  [com.stuartsierra/component "1.1.0"]
                  [org.clojure/tools.logging "1.3.0"]
-                 [cheshire "6.0.0"]]
+                 [cheshire "6.1.0"]]
 
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev

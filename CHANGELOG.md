@@ -1,5 +1,13 @@
 # Changelog
 
+### v2.5.0 - **unreleased**
+
+* feat: sets up better unix signal handler, so that when JVM exit is triggered by SIGTERM or SIGKILL and system exits cleanly, exit code 0 is used. 
+
+### v2.4.0
+
+* feat: simplify development & test system management code by using `c.t.namespace` better
+
 ### v2.3.0 (2025-07-11)
 
 *   feat: Add simple Jetty component and tests

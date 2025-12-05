@@ -11,7 +11,6 @@
   [^String signal]
   (Signal/handle (Signal. signal) exit-zero-handler))
 
-#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn use-exit-code-zero-for-graceful-exit!
   "By default, the JVM handles INT and TERM signals by return status
   codes by triggering graceful shutdown and returning a status code

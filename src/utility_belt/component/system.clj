@@ -7,6 +7,7 @@
    [utility-belt.compile :as compile]
    [utility-belt.component :as util.component]
    [utility-belt.lifecycle :as lifecycle]
+   [utility-belt.signal-handlers :as signal]
    [utility-belt.type :as type]))
 
 (defn fn-sym->ns-sym
@@ -46,7 +47,8 @@
                                      :component-map-fn  system/production)))
   ```
   "
-  [{:keys [store service component-map-fn]}]
+  [{:keys [store service component-map-fn use-exit-code-zero-for-graceful-shutdown?]
+    :or {use-exit-code-zero-for-graceful-shutdown? true}}]
   {:pre [(type/atom? store)
          (or (fn? component-map-fn)
              (qualified-symbol? component-map-fn))]}
@@ -60,7 +62,9 @@
     (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
                                                     (log/infof "stopping %s" svc-name)
                                                     (swap! store
-                                                           #(when % (component/stop-system %))))))
+                                                           #(when % (component/stop-system %)))))
+    (when use-exit-code-zero-for-graceful-shutdown?
+      (signal/use-exit-code-zero-for-graceful-exit!)))
 
   store)
 

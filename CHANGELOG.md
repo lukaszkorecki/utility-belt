@@ -1,8 +1,9 @@
 # Changelog
 
-### v2.5.0 - **unreleased**
+### v2.5.0
 
-* feat: sets up better unix signal handler, so that when JVM exit is triggered by SIGTERM or SIGKILL and system exits cleanly, exit code 0 is used. 
+* feat: sets up better unix signal handler, so that when JVM exit is triggered by SIGTERM or SIGKILL and system exits cleanly, exit code 0 is used.
+* chhore: dependency update
 
 ### v2.4.0
 

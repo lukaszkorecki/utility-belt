@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        runner_image: ["openjdk-11-lein-2.9.6", "temurin-21-lein-bullseye-slim", "temurin-24-lein-bullseye-slim"]
+        runner_image: ["temurin-21-lein-bullseye-slim", "temurin-24-lein-bullseye-slim", "temurin-25-lein-bullseye-slim"]
 
     container:
       image: clojure:${{ matrix.runner_image }}

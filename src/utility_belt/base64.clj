@@ -16,8 +16,8 @@
   (byte-array
     ;; needs to cond on type to stop reflection
    (cond
-    (bytes? base64) (.decode decoder ^bytes base64)
-    (string? base64) (.decode decoder ^String base64))))
+     (bytes? base64) (.decode decoder ^bytes base64)
+     (string? base64) (.decode decoder ^String base64))))
 
 (defn decode->str
   "Decode from bytes or string to string"
@@ -33,8 +33,8 @@
   {:pre [(or (bytes? data) (string? data))
          (Charset/isSupported encoding)]}
   (cond
-   (bytes? data) data
-   (string? data) (.getBytes ^String data encoding)))
+    (bytes? data) data
+    (string? data) (.getBytes ^String data encoding)))
 
 (defn encode
   "Encode string or bytes to bytes"

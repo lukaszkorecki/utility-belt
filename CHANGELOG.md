@@ -1,5 +1,14 @@
 # Changelog
 
+### v3.0.0-SNAPSHOT
+
+**Breaking change**
+
+JVM 21 or higher is required.
+
+* feat: add direct support for virtual threads (opt-in) to `run-task-in-parallel` and friend
+* chore: dependency update
+
 ### v2.5.0
 
 * feat: sets up better unix signal handler, so that when JVM exit is triggered by SIGTERM or SIGKILL and system exits cleanly, exit code 0 is used.

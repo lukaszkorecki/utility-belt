@@ -1,6 +1,6 @@
 # Changelog
 
-### v3.0.0-SNAPSHOT
+### v3.0.0
 
 **Breaking change**
 

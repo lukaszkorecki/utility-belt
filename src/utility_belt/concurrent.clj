@@ -1,7 +1,7 @@
 (ns utility-belt.concurrent
   "A set of helpers for working with Java's concurrency constructs"
-  (:require [utility-belt.compile :as ub.compile])
-  (:import [java.util.concurrent
+  (:import [java.lang Thread$Builder$OfVirtual]
+           [java.util.concurrent
             Executors
             ExecutorService
             TimeUnit
@@ -13,15 +13,10 @@
 
 (set! *warn-on-reflection* true)
 
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (def num-cpus
   "Number of CPUs available to the JVM, used to determine the number of threads in a thread pool."
   (max 1 (.. Runtime getRuntime availableProcessors)))
-
-(def virtual-threads-available?
-  "Check if virtual threads are available on the current JVM"
-  (ub.compile/compile-if (Thread/ofVirtual)
-    true
-    false))
 
 (defn- thread-factory
   "Create a new thread factory for use with thread pools"
@@ -33,12 +28,28 @@
           (.setDaemon daemon?)
           (.setName (str name "-" (AtomicLong/.getAndIncrement thread-id))))))))
 
+(defn- virtual-thread-factory
+  "Create a new thread factory for virtual threads"
+  ^ThreadFactory
+  [{:keys [name]}]
+  (-> (Thread/ofVirtual)
+      ^Thread$Builder$OfVirtual (.name ^String name)
+      (.factory)))
+
 (defn make-task-pool
-  "Make a new ThreadPoolExecutor that will execute tasks in parallel."
+  "Make a new ThreadPoolExecutor that will execute tasks in parallel.
+
+  Options:
+  - `:thread-count` - number of threads in the pool (ignored when using virtual threads)
+  - `:pool-name` - name prefix for threads
+  - `:virtual-threads?` - if true, use virtual threads instead of a fixed thread pool"
   ^ExecutorService
-  [{:keys [thread-count pool-name]}]
-  (Executors/newFixedThreadPool ^long thread-count
-                                ^ThreadFactory (thread-factory {:name pool-name :daemon? false})))
+  [{:keys [thread-count pool-name virtual-threads?]}]
+  (if virtual-threads?
+    (Executors/newThreadPerTaskExecutor
+     (virtual-thread-factory {:name (str pool-name "-")}))
+    (Executors/newFixedThreadPool ^long thread-count
+                                  ^ThreadFactory (thread-factory {:name pool-name :daemon? false}))))
 
 (defn shutdown-task-pool
   "Shutdown a task pool, waiting for tasks to complete."
@@ -64,19 +75,29 @@
 (defn run-tasks-in-parallel
   "`pmap` replacement, but allows you to schedule tasks (functions) in a controlled threadpool.
   Note if that one tasks throws an exception - all other tasks will be cancelled and the exception will be rethrown.
+
+  Options:
+  - `:task-group-name` - name prefix for threads (default: \"tasks\")
+  - `:tasks` - collection of functions to execute
+  - `:thread-count` - number of threads in the pool (default: 2, ignored when using virtual threads)
+  - `:max-wait-time-ms` - maximum time to wait for tasks to complete (default: 1000)
+  - `:virtual-threads?` - if true, use virtual threads instead of a fixed thread pool (default: false)
   "
   [{:keys [task-group-name
            tasks
            thread-count
-           max-wait-time-ms]
+           max-wait-time-ms
+           virtual-threads?]
     :or {task-group-name "tasks"
          max-wait-time-ms 1000
-         thread-count 2}}]
+         thread-count 2
+         virtual-threads? false}}]
   {:pre [(every? fn? tasks)
-         (pos? thread-count)
+         (or virtual-threads? (pos? thread-count))
          (> max-wait-time-ms 50)]}
   (let [exec (make-task-pool {:thread-count thread-count
-                              :pool-name task-group-name})
+                              :pool-name task-group-name
+                              :virtual-threads? virtual-threads?})
         results (run-tasks exec {:tasks tasks
                                  :max-wait-time-ms max-wait-time-ms})]
     (shutdown-task-pool exec {:max-wait-time-ms max-wait-time-ms})
@@ -121,17 +142,17 @@
          (modes mode)]}
 
   (cond
-   (= mode ::fixed-rate) (ScheduledThreadPoolExecutor/.scheduleAtFixedRate pool
-                                                                           ^Runnable handler
-                                                                           ^long delay-ms
-                                                                           ^long period-ms
-                                                                           TimeUnit/MILLISECONDS)
+    (= mode ::fixed-rate) (ScheduledThreadPoolExecutor/.scheduleAtFixedRate pool
+                                                                            ^Runnable handler
+                                                                            ^long delay-ms
+                                                                            ^long period-ms
+                                                                            TimeUnit/MILLISECONDS)
 
-   (= mode ::fixed-delay) (ScheduledThreadPoolExecutor/.scheduleWithFixedDelay pool
-                                                                               ^Runnable handler
-                                                                               ^long delay-ms
-                                                                               ^long period-ms
-                                                                               TimeUnit/MILLISECONDS)
+    (= mode ::fixed-delay) (ScheduledThreadPoolExecutor/.scheduleWithFixedDelay pool
+                                                                                ^Runnable handler
+                                                                                ^long delay-ms
+                                                                                ^long period-ms
+                                                                                TimeUnit/MILLISECONDS)
 
-   :else (throw (ex-info "Invalid mode for scheduling task"
-                  {:mode mode :valid-modes modes}))))
+    :else (throw (ex-info "Invalid mode for scheduling task"
+                          {:mode mode :valid-modes modes}))))

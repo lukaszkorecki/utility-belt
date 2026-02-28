@@ -1,18 +1,20 @@
 (ns utility-belt.component.jetty
   "Provides a component for running a Jetty server with a Ring handler. Requires `ring/ring-jetty-adapter` dependency."
-  (:require
+  (:require [ring.adapter.jetty :as jetty]
+            [utility-belt.component :as component])
+  (:import [java.util.concurrent Executors]
+           [org.eclipse.jetty.util.thread QueuedThreadPool]
+           [org.eclipse.jetty.server Server]))
 
-   [ring.adapter.jetty :as jetty]
-   [utility-belt.component :as component])
-  (:import
-   [java.util.concurrent Executors]
-   [org.eclipse.jetty.util.thread QueuedThreadPool]
-   [org.eclipse.jetty.server Server]))
+(set! *warn-on-reflection* true)
 
 (defn- make-virtual-thread-pool []
   (doto (QueuedThreadPool.)
-    (.setVirtualThreadsExecutor
-     (Executors/newVirtualThreadPerTaskExecutor))))
+    ;; as per Jetty docs, do not reserve any threads for internal tasks when using
+    ;; virtual threads, since that makes no difference due to virtual thread starting instantly
+    ;; see: https://jetty.org/docs/jetty/12.1/programming-guide/arch/threads.html
+    (.setReservedThreads 0)
+    (.setVirtualThreadsExecutor (Executors/newVirtualThreadPerTaskExecutor))))
 
 #_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn create

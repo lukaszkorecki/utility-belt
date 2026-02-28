@@ -1,9 +1,18 @@
 (ns utility-belt.component.jetty
   "Provides a component for running a Jetty server with a Ring handler. Requires `ring/ring-jetty-adapter` dependency."
-  (:require [ring.adapter.jetty :as jetty]
-            [utility-belt.component :as component])
+  (:require
+
+   [ring.adapter.jetty :as jetty]
+   [utility-belt.component :as component])
   (:import
+   [java.util.concurrent Executors]
+   [org.eclipse.jetty.util.thread QueuedThreadPool]
    [org.eclipse.jetty.server Server]))
+
+(defn- make-virtual-thread-pool []
+  (doto (QueuedThreadPool.)
+    (.setVirtualThreadsExecutor
+     (Executors/newVirtualThreadPerTaskExecutor))))
 
 #_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn create
@@ -25,9 +34,11 @@
                this
                (let [deps (dissoc this :config)
                      wrapped-handler (fn with-deps' [request]
-                                       (handler (assoc request :component deps)))]
-                 (assoc this :jetty (jetty/run-jetty wrapped-handler
-                                                     (:config this))))))
+                                       (handler (assoc request :component deps)))
+                     jetty-config (cond-> (:config this)
+                                    (:virtual-threads? (:config this)) (assoc :thread-pool (make-virtual-thread-pool))
+                                    :always (dissoc :virtual-threads?))]
+                 (assoc this :jetty (jetty/run-jetty wrapped-handler jetty-config)))))
     :stop (fn [this]
             (if-let [server (:jetty this)]
               (do

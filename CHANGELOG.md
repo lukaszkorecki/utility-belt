@@ -1,5 +1,9 @@
 # Changelog
 
+### v3.1.0
+
+* feat: add virtual thread support to Jetty component
+
 ### v3.0.0
 
 **Breaking change**

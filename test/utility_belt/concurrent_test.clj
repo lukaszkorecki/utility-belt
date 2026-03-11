@@ -76,6 +76,18 @@
       (is (= [1 2 3 4 5 6]
              (sort results))))))
 
+(deftest schedule-task-rejects-mode-test
+  (testing "passing :mode throws because only fixed-rate is supported"
+    (let [pool (concurrent/make-scheduler-pool {:name "mode-test" :thread-count 1})]
+      (try
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                              #"Only fixed-rate scheduling is supported"
+                              (concurrent/schedule-task pool {:handler (fn [])
+                                                              :period-ms 100
+                                                              :mode :fixed-delay})))
+        (finally
+          (concurrent/shutdown-scheduler-pool pool))))))
+
 (deftest scheduler-task-modes-test
   (testing "fixed rate"
     (let [pool (concurrent/make-scheduler-pool {:name "test" :thread-count 1})]

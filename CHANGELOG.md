@@ -1,5 +1,11 @@
 # Changelog
 
+### v4.0.0 (unreleased)
+
+**Breaking change**
+
+* feat: migrates task scheduler code and Component to use `CronScheduler` as it's not succeptible to clock drift. See this PR for more details https://github.com/lukaszkorecki/utility-belt/pull/13
+
 ### v3.1.0
 
 * feat: add virtual thread support to Jetty component

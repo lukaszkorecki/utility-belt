@@ -45,3 +45,22 @@
             :task-2
             :task-2]
            (->> @system :store deref (take 8) sort)))))
+
+(deftest task-error-resilience-test
+  (testing "a task that throws keeps firing on subsequent ticks"
+    (let [counter (atom 0)
+          error-sys (c/map->system
+                     {:scheduler (comp.scheduler/create-pool {:name "ErrorTest"})
+                      :task (component/using
+                             (comp.scheduler/create-task {:name "error-task"
+                                                          :period-ms 100
+                                                          :handler (fn [_]
+                                                                     (swap! counter inc)
+                                                                     (throw (ex-info "boom" {})))})
+                             [:scheduler])})
+          started (component/start error-sys)]
+      (try
+        (Thread/sleep 400)
+        (is (> @counter 1) "task should have fired multiple times despite throwing")
+        (finally
+          (component/stop started))))))

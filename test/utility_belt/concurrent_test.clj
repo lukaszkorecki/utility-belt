@@ -84,37 +84,55 @@
                               #"Only fixed-rate scheduling is supported"
                               (concurrent/schedule-task pool {:handler (fn [])
                                                               :period-ms 100
-                                                              :mode :fixed-delay})))
+                                                              :mode ::concurrent/fixed-delay})))
         (finally
           (concurrent/shutdown-scheduler-pool pool))))))
 
-(deftest scheduler-task-modes-test
-  (testing "fixed rate"
-    (let [pool (concurrent/make-scheduler-pool {:name "test" :thread-count 1})]
-      (let [start-time (System/currentTimeMillis)
-            state (atom [])
-            task (fn []
-                   (Thread/sleep 200)
-                   (swap! state conj (- (System/currentTimeMillis) ^long start-time)))
+(defn round-down [ms]
+  (let [round-to 100]
+    (* (quot ms round-to) round-to)))
 
-            round-down (fn [ms]
-                         (let [round-to 100]
-                           (* (quot ms round-to) round-to)))]
+(deftest scheduler-test
+  (let [pool (concurrent/make-scheduler-pool {:name "test" :thread-count 1})
+        start-time (System/currentTimeMillis)
+        state (atom [])
+        task (fn []
+               (Thread/sleep 200)
+               (swap! state conj (- (System/currentTimeMillis) ^long start-time)))]
 
-        (testing "scheduling a task with fixed-rate will cause the the task fire regardless of previous execution"
-          (concurrent/schedule-task pool {:handler task
-                                          ;; :mode ::concurrent/fixed-rate - DEFAULT
-                                          :period-ms 100})
+    (testing "scheduling a task with fixed-rate will cause the the task fire regardless of previous execution"
+      (concurrent/schedule-task pool {:handler task
+                                      :period-ms 100})
 
-          (is (empty? @state))
+      (is (empty? @state))
 
-          (Thread/sleep 300)
+      (Thread/sleep 300)
 
-          (is (= [200] (mapv round-down @state)))
+      (is (= [200] (mapv round-down @state)))
 
-          (Thread/sleep 350)
+      (Thread/sleep 350)
 
-          (testing "after another 300ms, the task ran again, and the state is updated without waiting on previous tasks"
-            (is (= [200 400 600] (mapv round-down @state))))))
+      (testing "after another 300ms, the task ran again, and the state is updated without waiting on previous tasks"
+        (is (= [200 400 600] (mapv round-down @state))))
 
       (concurrent/shutdown-scheduler-pool pool))))
+
+(deftest shutdown-long-task-test
+  (testing " if scheduled task takes longer than shutdown wait time, the pool will be forcefully shutdown and the task will be interrupted"
+
+    (let [pool (concurrent/make-scheduler-pool {:name "shutdown-test" :thread-count 1})
+          has-run? (atom false)
+          has-finished? (atom false)
+          task (fn []
+                 (try
+                   (reset! has-run? true)
+                   (Thread/sleep 12000) ;; over the 10s deadline
+                   (reset! has-finished? true)
+                   (catch InterruptedException _)))]
+
+      (concurrent/schedule-task pool {:handler task :period-ms 1000})
+      (is (concurrent/shutdown-scheduler-pool pool))
+
+      (is (= true @has-run?))
+      (is (= false @has-finished?)
+          "Task should not have finished because it should have been interrupted due to shutdown timeout"))))

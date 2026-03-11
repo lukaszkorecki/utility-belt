@@ -2,15 +2,13 @@
   "A set of helpers for working with Java's concurrency constructs"
   (:import
    ;; see more here why this is used: https://javadoc.io/doc/io.timeandspace/cron-scheduler/latest/io/timeandspace/cronscheduler/CronScheduler.html
-   [io.timeandspace.cronscheduler CronScheduler CronSchedulerBuilder CronTask]
+   [io.timeandspace.cronscheduler CronScheduler CronSchedulerBuilder CronTask OneShotTasksShutdownPolicy]
    [java.lang Thread$Builder$OfVirtual]
    [java.util.concurrent
     Executors
     ExecutorService
     TimeUnit
-    ScheduledThreadPoolExecutor
     ThreadFactory
-    ThreadPoolExecutor$AbortPolicy
     TimeUnit]
    [java.util.concurrent.atomic AtomicLong]))
 
@@ -125,12 +123,16 @@
   [thing]
   (instance? CronScheduler thing))
 
+(def shutdown-policy (OneShotTasksShutdownPolicy/valueOf "DISCARD_DELAYED"))
+
 (defn shutdown-scheduler-pool
   "Shutdown a scheduler pool, waiting for tasks to complete."
   [^CronScheduler pool]
   (try
-    (.shutdownNow pool)
-    (.awaitTermination pool 10 TimeUnit/SECONDS)
+    (.shutdown pool ^OneShotTasksShutdownPolicy shutdown-policy)
+    (when-not (.awaitTermination pool 10 TimeUnit/SECONDS)
+      (.shutdownNow pool))
+    ;; handle the case where the thread is interrupted  - we can't block for too long
     (catch InterruptedException _
       (.shutdownNow pool)
       (.interrupt (Thread/currentThread)))))

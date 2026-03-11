@@ -111,8 +111,12 @@
 (defn make-scheduler-pool
   "Create a new scheduler pool for running recurring tasks."
   [{:keys [name]}]
-  ;; resync wall clock every 3 minutes
-  (let [scheduler ^CronScheduler (CronScheduler/create (java.time.Duration/ofMinutes 3))]
+  ;; resync wall clock every 5 minutes - which is recommended for server side use as per javadoc
+  (let [scheduler-builder ^CronSchedulerBuilder (CronScheduler/newBuilder (java.time.Duration/ofMinutes 5))
+        scheduler (-> scheduler-builder
+                      (.setThreadFactory (thread-factory {:name (str name "-scheduler")
+                                                          :daemon? true}))
+                      (.build))]
     (CronScheduler/.prestartThread scheduler)
     scheduler))
 

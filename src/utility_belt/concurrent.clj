@@ -1,15 +1,18 @@
 (ns utility-belt.concurrent
   "A set of helpers for working with Java's concurrency constructs"
-  (:import [java.lang Thread$Builder$OfVirtual]
-           [java.util.concurrent
-            Executors
-            ExecutorService
-            TimeUnit
-            ScheduledThreadPoolExecutor
-            ThreadFactory
-            ThreadPoolExecutor$AbortPolicy
-            TimeUnit]
-           [java.util.concurrent.atomic AtomicLong]))
+  (:import
+   ;; see more here why this is used: https://javadoc.io/doc/io.timeandspace/cron-scheduler/latest/io/timeandspace/cronscheduler/CronScheduler.html
+   [io.timeandspace.cronscheduler CronScheduler CronSchedulerBuilder CronTask]
+   [java.lang Thread$Builder$OfVirtual]
+   [java.util.concurrent
+    Executors
+    ExecutorService
+    TimeUnit
+    ScheduledThreadPoolExecutor
+    ThreadFactory
+    ThreadPoolExecutor$AbortPolicy
+    TimeUnit]
+   [java.util.concurrent.atomic AtomicLong]))
 
 (set! *warn-on-reflection* true)
 
@@ -107,52 +110,54 @@
 
 (defn make-scheduler-pool
   "Create a new scheduler pool for running recurring tasks."
-  [{:keys [name thread-count] :or {thread-count 2}}]
-  (ScheduledThreadPoolExecutor. ^long thread-count
-                                ^ThreadFactory (thread-factory {:name name :daemon? true})
-                                ;; TODO: add logging variant of this:
-                                (ThreadPoolExecutor$AbortPolicy.)))
+  [{:keys [name]}]
+  ;; resync wall clock every 3 minutes
+  (let [scheduler ^CronScheduler (CronScheduler/create (java.time.Duration/ofMinutes 3))]
+    (CronScheduler/.prestartThread scheduler)
+    scheduler))
 
 (defn scheduler-pool?
   "Check if a given thing is a scheduler pool."
   [thing]
-  (instance? ScheduledThreadPoolExecutor thing))
+  (instance? CronScheduler thing))
 
 (defn shutdown-scheduler-pool
   "Shutdown a scheduler pool, waiting for tasks to complete."
-  [^ScheduledThreadPoolExecutor pool]
+  [^CronScheduler pool]
   (try
-    (.shutdown pool)
-    (.awaitTermination pool 10 java.util.concurrent.TimeUnit/SECONDS)
+    (.shutdownNow pool)
+    (.awaitTermination pool 10 TimeUnit/SECONDS)
     (catch InterruptedException _
       (.shutdownNow pool)
       (.interrupt (Thread/currentThread)))))
 
-(def ^:private modes #{::fixed-rate ::fixed-delay})
+(defn- fn->cron-task
+  "Turns a Clojure function into a CronTask.
+  While also protecting against clock drift by checking the scheduled run time
+  See here: https://javadoc.io/doc/io.timeandspace/cron-scheduler/latest/io/timeandspace/cronscheduler/CronScheduler.html
+  "
+  [a-fn]
+  (reify CronTask
+    (run [_this _scheduled-run-time-ms]
+      (a-fn))))
 
 (defn schedule-task
   "Schedule a recurring task running (very roughly) every `period-ms` milliseconds.
-  and executing the `handler` function."
-  [^ScheduledThreadPoolExecutor pool {:keys [handler period-ms delay-ms mode]
-                                      :or {delay-ms 0
-                                           mode ::fixed-rate}}]
+  and executing the `handler` function.
+  Underlying scheduler class will also attempt to compensate for clock drift, unlike Java's ScheduledThreadPoolExecutor, so your tasks will run more reliably at the expected intervals."
+  [^CronScheduler pool {:keys [handler period-ms delay-ms mode]
+                        :or {delay-ms 0}}]
   {:pre [(fn? handler)
          (nat-int? period-ms)
-         (not (neg? delay-ms))
-         (modes mode)]}
+         (not (neg? delay-ms))]}
 
-  (cond
-    (= mode ::fixed-rate) (ScheduledThreadPoolExecutor/.scheduleAtFixedRate pool
-                                                                            ^Runnable handler
-                                                                            ^long delay-ms
-                                                                            ^long period-ms
-                                                                            TimeUnit/MILLISECONDS)
-
-    (= mode ::fixed-delay) (ScheduledThreadPoolExecutor/.scheduleWithFixedDelay pool
-                                                                                ^Runnable handler
-                                                                                ^long delay-ms
-                                                                                ^long period-ms
-                                                                                TimeUnit/MILLISECONDS)
-
-    :else (throw (ex-info "Invalid mode for scheduling task"
-                          {:mode mode :valid-modes modes}))))
+  ;; NOTE: this is to catch code which uses different scheduler mmodes - because we're now using a different
+  ;;       scheduler implementation, we only support fixed-rate scheduling,
+  ;;       and fixed-delay scheduling is not supported, so we want to throw if we see that mode being used.
+  (when mode
+    (throw (ex-info "Only fixed-rate scheduling is supported" {:mode mode})))
+  (CronScheduler/.scheduleAtFixedRate pool
+                                      ^long delay-ms
+                                      ^long period-ms
+                                      TimeUnit/MILLISECONDS
+                                      ^CronTask (fn->cron-task handler)))

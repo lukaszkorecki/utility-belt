@@ -9,6 +9,7 @@
   :dependencies [[org.clojure/clojure "1.12.4"]
                  [com.stuartsierra/component "1.2.0"]
                  [org.clojure/tools.logging "1.3.1"]
+                 [io.timeandspace/cron-scheduler "0.1"]
                  [cheshire "6.1.0"]]
 
   :global-vars {*warn-on-reflection* true}

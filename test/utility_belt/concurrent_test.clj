@@ -78,7 +78,7 @@
 
 (deftest scheduler-task-modes-test
   (testing "fixed rate"
-    (with-open [^java.util.concurrent.ScheduledThreadPoolExecutor pool (concurrent/make-scheduler-pool {:name "test" :thread-count 1})]
+    (let [pool (concurrent/make-scheduler-pool {:name "test" :thread-count 1})]
       (let [start-time (System/currentTimeMillis)
             state (atom [])
             task (fn []
@@ -103,33 +103,6 @@
           (Thread/sleep 350)
 
           (testing "after another 300ms, the task ran again, and the state is updated without waiting on previous tasks"
-            (is (= [200 400 600] (mapv round-down @state))))))))
+            (is (= [200 400 600] (mapv round-down @state))))))
 
-  (testing "fixed delay"
-    (with-open [^java.util.concurrent.ScheduledThreadPoolExecutor pool (concurrent/make-scheduler-pool {:name "test" :thread-count 1})]
-      (let [start-time (System/currentTimeMillis)
-            state (atom [])
-            task (fn []
-                   (Thread/sleep 200)
-                   (swap! state conj (- (System/currentTimeMillis) ^long start-time)))
-
-            round-down (fn [ms]
-                         (let [round-to 100]
-                           (* (quot ms round-to) round-to)))]
-
-        (testing "scheduling a task with fixed-delay will cause the the task fire only after previous finished"
-          (concurrent/schedule-task pool {:handler task
-                                          :mode ::concurrent/fixed-delay
-                                          :period-ms 100})
-
-          (is (empty? @state))
-
-          (Thread/sleep 300)
-
-          (testing "even though we scheduled it to run every 100ms, it only ran once because task blocks for 200ms"
-            (is (= [200] (mapv round-down @state))))
-
-          (Thread/sleep 300)
-
-          (testing "after another 300ms, the task ran again, and the state is updated"
-            (is (= [200 500] (mapv round-down @state)))))))))
+      (concurrent/shutdown-scheduler-pool pool))))

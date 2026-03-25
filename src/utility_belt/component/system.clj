@@ -50,14 +50,14 @@
   [{:keys [store service component-map-fn use-exit-code-zero-for-graceful-shutdown?]
     :or {use-exit-code-zero-for-graceful-shutdown? true}}]
   {:pre [(type/atom? store)
-         (or (fn? component-map-fn)
+         (or (ifn? component-map-fn)
              (qualified-symbol? component-map-fn))]}
   (let [svc-name (str (or service
                           (first (str/split (str *ns*) #"\."))))
         ;; support both the fn or a fully qual symbol
-        component-map-fn (if (fn? component-map-fn)
-                           component-map-fn
-                           (requiring-resolve component-map-fn))]
+        component-map-fn (if (qualified-symbol? component-map-fn)
+                           (requiring-resolve component-map-fn)
+                           component-map-fn)]
     (reset! store (component/start-system (util.component/map->system (component-map-fn))))
     (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
                                                     (log/infof "stopping %s" svc-name)
@@ -109,13 +109,13 @@
   - `debug?`: boolean, if true will print start/stop/no-op messages
   "
   [{:keys [component-map-fn reloadable? debug?]}]
-  {:pre [(or (fn? component-map-fn) (qualified-symbol? component-map-fn))]}
+  {:pre [(or (ifn? component-map-fn) (qualified-symbol? component-map-fn))]}
   (when reloadable?
     (assert tools-ns-available? "clojure.tools.namespace.repl is not available, cannot enable code reloading!")
     (disable-reload! *ns*))
-  (let [component-map-fn' (if (fn? component-map-fn)
-                            component-map-fn
-                            (requiring-resolve component-map-fn))
+  (let [component-map-fn' (if (qualified-symbol? component-map-fn)
+                            (requiring-resolve component-map-fn)
+                            component-map-fn)
         sys-ns (-> component-map-fn' meta :ns)
         sys-atom (atom nil)]
     (when reloadable?

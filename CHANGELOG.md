@@ -1,5 +1,9 @@
 # Changelog
 
+### v3.1.1-SNAPSHOT
+
+* feat: `:component-map-fn` now accepts a plain function in addition to a qualified symbol for `setup-for-dev`.
+
 ### v3.1.0
 
 * feat: add virtual thread support to Jetty component

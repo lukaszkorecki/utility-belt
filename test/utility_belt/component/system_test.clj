@@ -22,6 +22,7 @@
                                    (assoc this :stopped true :started false))})})
 
 (defn- assert-prod-behavior [component-map-fn]
+  (reset! counter 0)
   (let [store (atom nil)]
     (setup-for-production {:store store
                            :component-map-fn component-map-fn})
@@ -38,6 +39,7 @@
     (assert-prod-behavior fn-symbol)))
 
 (defn- assert-dev-behavior [component-map-fn]
+  (reset! counter 0)
   (let [control (setup-for-dev {:component-map-fn component-map-fn
                                 :reloadable? false})
         {:keys [start-system stop-system get-system]} control]
@@ -68,6 +70,7 @@
 
 (deftest setup-for-test-test
   (testing "provides utility for unit tests"
+    (reset! counter 0)
     (let [{:keys [use-test-system get-system]} (setup-for-test {:component-map-fn fn-symbol})]
       (testing "within the hook, system is started and can be used"
         (use-test-system (fn []

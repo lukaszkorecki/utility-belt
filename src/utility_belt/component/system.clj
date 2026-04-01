@@ -50,14 +50,14 @@
   [{:keys [store service component-map-fn use-exit-code-zero-for-graceful-shutdown?]
     :or {use-exit-code-zero-for-graceful-shutdown? true}}]
   {:pre [(type/atom? store)
-         (or (fn? component-map-fn)
+         (or (ifn? component-map-fn)
              (qualified-symbol? component-map-fn))]}
   (let [svc-name (str (or service
                           (first (str/split (str *ns*) #"\."))))
         ;; support both the fn or a fully qual symbol
-        component-map-fn (if (fn? component-map-fn)
-                           component-map-fn
-                           (fn-sym->ns-sym component-map-fn))]
+        component-map-fn (if (qualified-symbol? component-map-fn)
+                           (requiring-resolve component-map-fn)
+                           component-map-fn)]
     (reset! store (component/start-system (util.component/map->system (component-map-fn))))
     (lifecycle/add-shutdown-hook :shutdown-system (fn stop! []
                                                     (log/infof "stopping %s" svc-name)
@@ -102,26 +102,25 @@
   There are some caveats but it should work for the most part, as opposed to `component.repl` approach.
 
   Args:
-  - `component-map-fn`: a symbol pointing to a function that returns a **map of components** NOT an instance of `component/SystemMap`
+  - `component-map-fn`: a function or a symbol pointing to it that returns a **map of components**
+                        but NOT an instance of `component/SystemMap`
   - `reloadable?`: boolean, if true, will enable reloading of the system map function and the system itself, default is false
                   When true, it requires `clojure.tools.namespace` to be present in the classpath, otherwise it will throw an error.
   - `debug?`: boolean, if true will print start/stop/no-op messages
   "
-  [{:keys [component-map-fn
-           reloadable?
-           debug?]}]
-  {:pre [(qualified-symbol? component-map-fn)]}
+  [{:keys [component-map-fn reloadable? debug?]}]
+  {:pre [(or (ifn? component-map-fn) (qualified-symbol? component-map-fn))]}
   (when reloadable?
     (assert tools-ns-available? "clojure.tools.namespace.repl is not available, cannot enable code reloading!")
     (disable-reload! *ns*))
-
-  (let [sys-ns (find-ns (symbol (namespace component-map-fn)))
+  (let [component-map-fn' (if (qualified-symbol? component-map-fn)
+                            (requiring-resolve component-map-fn)
+                            component-map-fn)
+        sys-ns (-> component-map-fn' meta :ns)
         sys-atom (atom nil)]
-
     (when reloadable?
       ;; always reload system namespace - so we have to tell ctn.repl about this
       (alter-meta! sys-ns merge #:clojure.tools.namespace.repl{:load true :unload true}))
-
     {:start-system (fn start-system'
                      ([]
                       (start-system' {}))
@@ -137,12 +136,11 @@
                                               (log/debugf "Starting system in %s" sys-ns))
                                             (when reloadable?
                                               (refresh))
-                                            (-> ((requiring-resolve component-map-fn))
+                                            (-> (component-map-fn')
                                                 (merge additional-component-map)
                                                 component/map->SystemMap
                                                 component/start)))))
                       ::started))
-
      :stop-system (fn stop-system' []
                     (swap! sys-atom
                            (fn [sys]
@@ -155,7 +153,6 @@
                                (when debug?
                                  (log/debugf "System not running in %s" sys-ns)))))
                     ::stopped)
-
      :get-system (fn get-system' []
                    @sys-atom)}))
 

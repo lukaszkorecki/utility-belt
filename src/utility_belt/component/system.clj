@@ -113,10 +113,14 @@
   (when reloadable?
     (assert tools-ns-available? "clojure.tools.namespace.repl is not available, cannot enable code reloading!")
     (disable-reload! *ns*))
-  (let [component-map-fn' (if (qualified-symbol? component-map-fn)
-                            (requiring-resolve component-map-fn)
-                            component-map-fn)
-        sys-ns (-> component-map-fn' meta :ns)
+  ;; When a qualified symbol is provided we must re-resolve it on every start,
+  ;; *after* `refresh` has run. `tools.namespace.repl/refresh` removes and
+  ;; re-loads the namespace, which creates new Var objects - any Var captured
+  ;; before refresh is orphaned and would invoke pre-reload code.
+  (let [resolve-component-map-fn (if (qualified-symbol? component-map-fn)
+                                   (fn reloader' [] (requiring-resolve component-map-fn))
+                                   (constantly component-map-fn))
+        sys-ns (-> (resolve-component-map-fn) meta :ns)
         sys-atom (atom nil)]
     (when reloadable?
       ;; always reload system namespace - so we have to tell ctn.repl about this
@@ -136,7 +140,7 @@
                                               (log/debugf "Starting system in %s" sys-ns))
                                             (when reloadable?
                                               (refresh))
-                                            (-> (component-map-fn')
+                                            (-> ((resolve-component-map-fn))
                                                 (merge additional-component-map)
                                                 component/map->SystemMap
                                                 component/start)))))

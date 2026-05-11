@@ -14,4 +14,5 @@
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev
              {:dependencies [[ch.qos.logback/logback-classic "1.5.32"]
-                             [ring/ring-jetty-adapter "1.15.3"]]}})
+                             [ring/ring-jetty-adapter "1.15.3"]
+                             [org.clojure/tools.namespace "1.5.1"]]}})

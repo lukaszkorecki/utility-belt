@@ -1,6 +1,7 @@
 (ns utility-belt.component.system
   "Functions for managing the lifecycle of a component-based system."
   (:require
+   clojure.main
    [clojure.tools.logging :as log]
    [clojure.string :as str]
    [com.stuartsierra.component :as component]
@@ -9,16 +10,6 @@
    [utility-belt.lifecycle :as lifecycle]
    [utility-belt.signal-handlers :as signal]
    [utility-belt.type :as type]))
-
-(defn fn-sym->ns-sym
-  "Given a fully qualified symbol for a fn, returns its namespace symbol"
-  [fn-sym]
-  (-> fn-sym
-      resolve
-      meta
-      :ns
-      clojure.lang.Namespace/.getName
-      symbol))
 
 #_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn setup-for-production
@@ -85,6 +76,20 @@
     (def refresh identity)
     (def disable-reload! identity)))
 
+(defn- ->qual-symbol [component-map-fn]
+  (cond
+    (qualified-symbol? component-map-fn)
+    component-map-fn
+
+    (fn? component-map-fn)
+    (-> component-map-fn class (Class/.getName) clojure.main/demunge symbol)
+
+    (var? component-map-fn)
+    (apply symbol ((juxt :ns :name) (-> component-map-fn
+                                        meta
+                                        (update :ns clojure.lang.Namespace/.getName)
+                                        (update-vals str))))))
+
 (defn setup-for-dev
   "Sets up a dev-system namespace which will provide start, stop and getter function as well
   as hold on to the started system.
@@ -113,10 +118,13 @@
   (when reloadable?
     (assert tools-ns-available? "clojure.tools.namespace.repl is not available, cannot enable code reloading!")
     (disable-reload! *ns*))
-  (let [component-map-fn' (if (qualified-symbol? component-map-fn)
-                            (requiring-resolve component-map-fn)
-                            component-map-fn)
-        sys-ns (-> component-map-fn' meta :ns)
+  ;; When a qualified symbol is provided we must re-resolve it on every start,
+  ;; *after* `refresh` has run. `tools.namespace.repl/refresh` removes and
+  ;; re-loads the namespace, which creates new Var objects - any Var captured
+  ;; before refresh is orphaned and would invoke pre-reload code.
+  (let [component-map-fn-qual-sym (->qual-symbol component-map-fn)
+        resolve-component-map-fn (fn reloader' [] (requiring-resolve component-map-fn-qual-sym))
+        sys-ns (-> component-map-fn-qual-sym resolve meta :ns)
         sys-atom (atom nil)]
     (when reloadable?
       ;; always reload system namespace - so we have to tell ctn.repl about this
@@ -136,7 +144,7 @@
                                               (log/debugf "Starting system in %s" sys-ns))
                                             (when reloadable?
                                               (refresh))
-                                            (-> (component-map-fn')
+                                            (-> ((resolve-component-map-fn))
                                                 (merge additional-component-map)
                                                 component/map->SystemMap
                                                 component/start)))))

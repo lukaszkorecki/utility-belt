@@ -1,4 +1,4 @@
-(defproject org.clojars.lukaszkorecki/utility-belt "3.1.1"
+(defproject org.clojars.lukaszkorecki/utility-belt "3.1.2-SNAPSHOT"
   :description "Some of the tools you'll ever need to fight crime and write Clojure stuffs"
   :license "MIT"
   :url "https://github.com/lukaszkorecki/utility-belt"
@@ -14,4 +14,5 @@
   :global-vars {*warn-on-reflection* true}
   :profiles {:dev
              {:dependencies [[ch.qos.logback/logback-classic "1.5.32"]
-                             [ring/ring-jetty-adapter "1.15.3"]]}})
+                             [ring/ring-jetty-adapter "1.15.3"]
+                             [org.clojure/tools.namespace "1.5.1"]]}})

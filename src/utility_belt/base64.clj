@@ -52,10 +52,10 @@
 (defn decode->str
   "Decode from bytes or string to string"
   (^String [base64]
-   (decode->str base64 default-charset))
-  (^String [base64 ^String encoding]
+   (decode->str base64 {:encoding default-charset}))
+  (^String [base64 {:keys [url-safe? encoding]}]
    {:pre [(Charset/isSupported encoding)]}
-   (bytes->str (decode base64) encoding)))
+   (bytes->str (decode base64 {:url-safe? url-safe?}) encoding)))
 
 ;; ENCODING
 

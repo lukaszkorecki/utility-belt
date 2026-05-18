@@ -49,8 +49,6 @@
     (is (= test-str-64 (base64/encode->str test-str)))
     (is (= test-str-64 (base64/encode->str test-str-bytes)))))
 
-
-
 (deftest encoding-with-opts-test
   (let [some-bytes (hashing/sha256 "have some 🧀")]
     (testing "defaults"
@@ -68,3 +66,15 @@
     (testing "url safe, no padding"
       (is (= "bvRAHOoEG8Zk25KX24xeqpaWKJ5zoDLg7zP-UX65aqg"
              (base64/encode->str some-bytes {:padding? false :url-safe? true}))))))
+
+(deftest decoding-with-opts-test
+
+  (testing "round trip"
+    (is (= "🍏  🍌 🧟‍♂️"
+           (-> "🍏  🍌 🧟‍♂️"
+               (base64/encode->str {:url-safe? true})
+               (base64/decode->str {:url-safe? true})))))
+
+  (testing "all the opts"
+    (is (same-bytes? (hashing/sha256 "have some 🧀")
+                     (base64/decode "bvRAHOoEG8Zk25KX24xeqpaWKJ5zoDLg7zP-UX65aqg" {:url-safe? true})))))

@@ -53,7 +53,8 @@
   "Decode from bytes or string to string"
   (^String [base64]
    (decode->str base64 {:encoding default-charset}))
-  (^String [base64 {:keys [url-safe? encoding]}]
+  (^String [base64 {:keys [url-safe? encoding]
+                    :or {encoding default-charset}}]
    {:pre [(Charset/isSupported encoding)]}
    (bytes->str (decode base64 {:url-safe? url-safe?}) encoding)))
 
